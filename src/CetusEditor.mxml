@@ -9,20 +9,327 @@
 			import com.SVGParser;
 			import com.greensock.TweenLite;
 			import com.lorentz.SVG.display.SVGDocument;
+			import com.lorentz.SVG.display.SVGPath;
 			import com.lorentz.SVG.display.base.SVGElement;
 			import com.lorentz.SVG.events.SVGEvent;
 			import com.lorentz.processing.ProcessExecutor;
 			
-			import spark.filters.DropShadowFilter;
+			import flash.filters.DropShadowFilter;
+			import flash.filters.GlowFilter;
 			
-			protected function init(event:Event):void
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.logging.Log;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			import spark.filters.DropShadowFilter;
+			import spark.filters.GlowFilter;
+			import spark.primitives.Path;
+			
+			[Embed(source="assets/logo.png")]
+			private var LogoClass:Class;
+			[Bindable] private var logo:Bitmap = new LogoClass();
+			[Embed(source="icons/32.png")]
+			private var IconClass:Class;
+			[Bindable] private var icon:Bitmap = new IconClass();
+			
+			[Bindable] private var _uiBackground:uint = 0x444444;	
+			[Bindable] private var _mianBackground:uint = 0x222222;
+			[Bindable] private var _fontColor:uint = 0xFFFFFF;
+			[Bindable] private var _uiCornerRadius:uint = 4;
+			[Bindable] private var floorDataProvider:ArrayCollection = new ArrayCollection([]);
+			
+			private var tools:Array = ["A","N","L","D","H","O","S"];
+			private var selectedFilterArray:Array = [new flash.filters.DropShadowFilter(0,0,0xFF0000,1,6,6,2)];
+			
+			private var origXML:XML;
+			private var nodes:Object = {};
+			private var pathes:Array = [];
+			private var pathDisplaySVGElements:Array;	
+			private var floorDisplaySVGElements:Array;
+			
+			private var isPathing:Boolean = false;
+			private var currentTool:String = "";
+			private var pathTmp:NodePath;
+			
+			private function init(event:Event):void
 			{
 				this.nativeWindow.x = (Capabilities.screenResolutionX - this.width) * 0.5;
 				this.nativeWindow.y = (Capabilities.screenResolutionY - this.height) * 0.5;
 				
 				ProcessExecutor.instance.initialize(stage);
+				addTools();
 				
-				setTimeout(showMainContainer,500);
+				setTimeout(showMainContainer,3000);
+			}
+			
+			private function addTools():void
+			{
+				for(var i:int = 0;i < tools.length;i ++)
+				{
+					var tool:String = tools[i];
+					var container:BorderContainer = new BorderContainer();
+					toolsContainer.addElement(container);
+					container.width = 20;
+					container.height = 20;
+					container.setStyle("cornerRadius",4);
+					container.setStyle("backgroundColor",_uiBackground);
+					container.setStyle("borderVisible",false);
+					container.addEventListener(MouseEvent.CLICK,onToolClick);
+					
+					var label:Label = new Label();
+					container.addElement(label);
+					label.text = tool;
+					label.horizontalCenter = 0;
+					label.verticalCenter = 1;
+				}
+				
+				selectToolByChar("A");
+				
+				displayContainer.addEventListener(MouseEvent.MOUSE_DOWN,onDisplayContainerMouseDown);
+				this.stage.addEventListener(KeyboardEvent.KEY_DOWN,function(e:KeyboardEvent):void{
+					var char:String = String.fromCharCode(e.charCode).toUpperCase();
+					selectToolByChar(char);
+				});
+			}
+			
+			private function onDisplayContainerMouseDown(event:MouseEvent):void
+			{
+				var obj:* = event.target;	//NODE,PATH,SVGPATH,STAGE
+				switch(currentTool){
+					case tools[0]:
+						selectTarget(obj);
+						if(obj is Node)
+						{
+							var dragNode:Node = obj;
+							
+							dragNode.startDrag();
+							var updatePathes:Function = function(e:Event):void{
+								for each(var path:NodePath in dragNode.pathes) path.updateDisplay();
+							};
+							var dragOver:Function = function(e:MouseEvent):void{
+								dragNode.stopDrag();
+								displayContainer.removeEventListener(MouseEvent.MOUSE_OUT,dragOver);
+								displayContainer.removeEventListener(MouseEvent.MOUSE_UP,dragOver);
+								displayContainer.removeEventListener(Event.ENTER_FRAME,updatePathes);
+								updatePathes(null);
+								
+								var nodePosition:String = dragNode.x + "," + dragNode.y;
+								var nodeId:String = dragNode.nodeId;
+								origXML.children().(@id == floorDownList.selectedItem)[0].children().(@nodeId == nodeId)[0].@nodePosition = nodePosition;
+							};
+							
+							displayContainer.addEventListener(MouseEvent.MOUSE_OUT,dragOver);
+							displayContainer.addEventListener(MouseEvent.MOUSE_UP,dragOver);
+							displayContainer.addEventListener(Event.ENTER_FRAME,updatePathes);
+						}
+						break;
+					case tools[1]:
+						if(!(obj is Node) && floorDownList.selectedItem)
+						{
+							var pathNodeXML:XML = SVGParser.generateNodeXML(displayContainer.mouseX,displayContainer.mouseY);
+							origXML.children().(@id == floorDownList.selectedItem)[0].appendChild(pathNodeXML);
+							var node:Node = new Node(pathNodeXML,floorDownList.selectedItem);
+							nodesContainer.addChild(node);
+							nodes[node.nodeId] = node;
+							selectTarget(node);
+						}
+						break;
+					case tools[2]:
+						if(obj is Node)
+						{
+							selectTarget(obj);
+							if(isPathing) {
+								isPathing = false;
+								displayContainer.removeEventListener(MouseEvent.MOUSE_MOVE,onDisplayContainerMouseMove);
+								
+								var path:NodePath = new NodePath(pathTmp.startNode,obj);
+								pathTmp.parent.removeChild(pathTmp);
+								pathTmp = null;
+								
+								pathesContainer.addChild(path);
+								path.startNode.pathes.push(path);
+								path.endNode.pathes.push(path);
+								pathes.push(path);
+								
+								var startNodeId:String = path.startNode.nodeId;
+								var endNodeId:String = path.endNode.nodeId;
+								var curSelectedFloorId:String = floorDownList.selectedItem;
+								
+								var str:String;
+								
+								str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds + "," + endNodeId;
+								if(str.charAt(0) == ",") str = str.substr(1,str.length - 1);
+								origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds = str;
+								
+								str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds + "," + startNodeId;
+								if(str.charAt(0) == ",") str = str.substr(1,str.length - 1);
+								origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds = str;
+							}
+							else
+							{
+								isPathing = true;
+								pathTmp = new NodePath(obj,new Node(SVGParser.generateNodeXML(displayContainer.mouseX,displayContainer.mouseY),floorDownList.selectedItem))
+								pathesContainer.addChild(pathTmp);
+								displayContainer.addEventListener(MouseEvent.MOUSE_MOVE,onDisplayContainerMouseMove);
+							}
+						}
+						break;
+					case tools[3]:
+						if(obj is Node && obj.sourceXML.@nodeTypeId == "0")
+						{
+							var deleteNode:Node = obj;
+							
+							//删除PATH
+							var tmpPathes:Array = deleteNode.pathes.concat();
+							for each(var deleteSubPath:NodePath in tmpPathes) deletePath(deleteSubPath);
+							tmpPathes = null;
+							
+							//删除显示
+							nodesContainer.removeChild(deleteNode);
+							
+							//删除数据
+							var deleteNodeId:String = deleteNode.nodeId;
+							nodes[deleteNodeId] = null;
+							delete nodes[deleteNodeId];
+							
+							//删除XML
+							delete origXML.children().(@id == floorDownList.selectedItem).children().(@nodeId == deleteNodeId)[0];
+						}
+						else if(obj is NodePath)
+						{
+							deletePath(obj);
+						}
+						break;
+					case tools[4]:
+						displayContainer.startDrag();
+						displayContainer.addEventListener(MouseEvent.MOUSE_UP,function(e:MouseEvent):void{
+							displayContainer.stopDrag();
+							displayContainer.removeEventListener(MouseEvent.MOUSE_UP,arguments.callee);
+						});
+						break;
+					default:break;
+				}
+			}
+			
+			private function addPath(startPathNode:Node,bindNode:Node):void
+			{
+				var isExist:Boolean = false;
+				for each(var path:NodePath in startPathNode.pathes)
+				{
+					if(path.startNode == startPathNode && path.endNode == bindNode) isExist = true;
+					if(path.startNode == bindNode && path.endNode == startPathNode) isExist = true;
+				}
+				
+				if(!isExist)
+				{
+					var newPath:NodePath = new NodePath(startPathNode,bindNode);
+					
+					startPathNode.addPath(newPath);
+					bindNode.addPath(newPath);
+					
+					pathesContainer.addChild(newPath);
+					newPath.visible = false;
+					
+					pathes.push(newPath);
+				}
+			}
+			
+			private function deletePath(path:NodePath):void
+			{
+				path.startNode.pathes.splice(path.startNode.pathes.indexOf(path),1);
+				path.endNode.pathes.splice(path.endNode.pathes.indexOf(path),1);
+				
+				if(path.parent) path.parent.removeChild(path);
+				
+				pathes.splice(pathes.indexOf(path),1);
+				
+				var startNodeId:String = path.startNode.nodeId;
+				var endNodeId:String = path.endNode.nodeId;
+				var curSelectedFloorId:String = floorDownList.selectedItem;
+				
+				var str:String;
+				
+				str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds;
+				str = str.replace(endNodeId,"");
+				str = str.replace(",,",",");
+				origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds = str;
+				
+				str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds;
+				str = str.replace(startNodeId,"");
+				str = str.replace(",,",",");
+				origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds = str;
+				
+				path = null;
+			}
+			
+			private function selectTarget(obj:*):void
+			{
+				for each(var node:Node in nodes) node.filters = (node == obj) ? selectedFilterArray : [];
+				for each(var path:NodePath in pathes) path.filters = (path == obj) ? selectedFilterArray : [];
+				for each(var element:SVGPath in pathDisplaySVGElements) element.filters = (element == obj) ? selectedFilterArray : [];
+				
+				if(obj is Node)
+				{
+					var curEditingNodeXML:XML = Node(obj).sourceXML;
+					nodeIdInput.text = curEditingNodeXML.@nodeId;
+					nodeTypeIdInput.text = curEditingNodeXML.@nodeTypeId;
+					bindNodeIdsInput.text = curEditingNodeXML.@bindNodeIds;
+					bindShopIdInput.text = curEditingNodeXML.@bindShopId;
+					nodePositionInput.text = curEditingNodeXML.@nodePosition;
+					fillInput.text = curEditingNodeXML.@fill;
+					deepInput.text = curEditingNodeXML.@deep;
+					dInput.text = curEditingNodeXML.@d;
+				}
+			}
+			
+			private function onDisplayContainerMouseMove(e:MouseEvent):void
+			{
+				pathTmp.endNode.x = displayContainer.mouseX;
+				pathTmp.endNode.y = displayContainer.mouseY;
+				pathTmp.updateDisplay();
+			}
+			
+			private function onToolClick(event:MouseEvent):void
+			{
+				var char:String = (event.currentTarget.getElementAt(0) as Label).text;
+				selectToolByChar(char);
+			}
+			
+			private function selectToolByChar(char:String):void
+			{
+				unSelectedAllTools();
+				for(var i:int = 0;i < toolsContainer.numElements;i ++)
+				{
+					var tmpContainer:BorderContainer = toolsContainer.getElementAt(i) as BorderContainer;
+					if((tmpContainer.getElementAt(0) as Label).text == char)
+					{
+						tmpContainer.setStyle("backgroundColor",_mianBackground);
+						currentTool = char;
+					}
+				}
+				
+				if(char == tools[5])
+				{
+					openFile();
+					selectToolByChar("A");
+				}
+				else if(char == tools[6])
+				{
+					saveFile();
+					selectToolByChar("A");
+				}
+			}
+			
+			private function unSelectedAllTools():void
+			{
+				currentTool = "";
+				for(var i:int = 0;i < toolsContainer.numElements;i ++)
+				{
+					var tmpContainer:BorderContainer = toolsContainer.getElementAt(i) as BorderContainer;
+					tmpContainer.setStyle("backgroundColor",_uiBackground);
+				}
 			}
 			
 			private function showMainContainer():void
@@ -33,12 +340,7 @@
 				TweenLite.to(mainShadowContainer,0.5,{alpha:1});
 			}
 			
-			[Bindable] private var _uiBackground:uint = 0x444444;
-			[Bindable] private var _mianBackground:uint = 0x222222;
-			[Bindable] private var _fontColor:uint = 0xFFFFFF;
-			[Bindable] private var _uiCornerRadius:uint = 4;
-			
-			protected function openFile(event:MouseEvent):void
+			private function openFile():void
 			{
 				var file:File = new File();
 				file.browseForOpen("打开SVG文件"/*,[new FileFilter("SVG Files","*.svg")]*/);
@@ -50,6 +352,37 @@
 					
 					origXML = SVGParser.coverToAllPath(origSVGString);
 					
+					nodes = {};
+					for each(var floorXML:XML in origXML.children())
+					{
+						for each(var pathXML:XML in floorXML.children())
+						{
+							var nodeId:String = pathXML.@nodeId.toString();
+							var node:Node = new Node(pathXML,floorXML.@id);
+							nodesContainer.addChild(node);
+							node.visible = false;
+							nodes[nodeId] = node;
+						}
+					}
+					
+					pathes = [];
+					for each(var startPathNode:Node in nodes)
+					{
+						var startNodeBindNodeIdString:String = startPathNode.sourceXML.@bindNodeIds;
+						var startNodeBindNodeIds:Array = startNodeBindNodeIdString.split(",");
+						for each(var bindNodeId:String in startNodeBindNodeIds)
+						{
+							var bindNode:Node = nodes[bindNodeId];
+							if(bindNode)
+							{
+								addPath(startPathNode,bindNode);
+							}
+						}
+					}
+					
+					floorDisplaySVGElements = [];
+					pathDisplaySVGElements = [];
+					
 					var origSVG:SVGDocument = new SVGDocument();
 					origSVG.parse(origSVGString);
 					origSVG.addEventListener(SVGEvent.ELEMENT_ADDED,function(e:SVGEvent):void{
@@ -58,28 +391,72 @@
 							case "SVG":			//SVG
 								break;	
 							case "SVGG":		//SVG FLOOR CONTAINER
-								trace(e.element.id);
+								floorDataProvider.source.push(e.element.id);
+								floorDisplaySVGElements.push(e.element);
 								e.element.visible = false;
 								break;
 							case "SVGPath":		//SVG PATH
+								pathDisplaySVGElements.push(e.element);
 								break;
 							default:break;
 						}
-						e.element.addEventListener(MouseEvent.CLICK,onSVGElementClick);
 					});
 					
 					SVGContainer.addChild(origSVG);
 				});
 			}
-			
-			private var origXML:XML;
-			
-			protected function onSVGElementClick(event:MouseEvent):void
+
+			private function saveFile():void
 			{
-				event.stopPropagation();
-				var element:SVGElement = event.target as SVGElement;
-				var nodeId:String = element.id;
-				trace("CURRENT_CLICK_NODE_ID:",nodeId);
+				if(origXML)
+				{
+					var fileR:FileReference = new FileReference();
+					var saveString:String = "<?xml version='1.0' encoding='utf-8'?>\n" +
+						"<!-- Generator: GimSVGEditor 1.0.1 -->\n" +
+						"<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>\n" +
+						origXML.toXMLString();
+					fileR.save(saveString,"data.sgxml");
+				}
+				else
+				{
+					Alert.show("你需要先加载一个SVG文件","SORRY");
+				}
+			}
+			
+			private function onFloorDownListChange(event:IndexChangeEvent):void
+			{
+				for each(var floor:SVGElement in floorDisplaySVGElements)
+				{
+					floor.visible = false;
+				}
+				floorDisplaySVGElements[event.newIndex].visible = true;
+				var floorId:String = floorDisplaySVGElements[event.newIndex].id;
+				for each(var node:Node in nodes)
+				{
+					node.visible = node.floorId == floorId;
+				}
+				
+				for each(var path:NodePath in pathes)
+				{
+					path.visible = path.startNode.floorId == path.endNode.floorId && path.startNode.floorId == floorId;
+				}
+			}
+			
+			protected function onInputChangee(event:TextOperationEvent):void
+			{
+//				if(curEditingNodeXML)
+//				{
+//					curEditingNodeXML.@nodeId = nodeIdInput.text;
+//					curEditingNodeXML.@nodeTypeId = nodeTypeIdInput.text;
+//					curEditingNodeXML.@bindNodeIds = bindNodeIdsInput.text;
+//					curEditingNodeXML.@bindShopId = bindShopIdInput.text;
+//					curEditingNodeXML.@nodePosition = nodePositionInput.text;
+//					curEditingNodeXML.@fill = fillInput.text;
+//					curEditingNodeXML.@deep = deepInput.text;
+//					curEditingNodeXML.@d = dInput.text;
+//				}
+//				
+//				updateDisplay();
 			}
 			
 		]]>
@@ -88,44 +465,46 @@
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	<s:Group id="splashContainer" horizontalCenter="0" verticalCenter="0">
-		<s:Image source="assets/logo.png" horizontalCenter="0" verticalCenter="0"/>
-		<s:Label text="loading..." color="0xDDDDDD" horizontalCenter="0" verticalCenter="0"/>
+		<s:Image source="{logo}" horizontalCenter="0" verticalCenter="0" smooth="true"/>
+		<s:Label y="116" left="93" right="140" color="0xDDDDDD"
+				 text="loading..." textAlign="left"
+				 verticalAlign="middle"/>
 	</s:Group>
-	<s:Group id="mainShadowContainer" width="100%" height="100%" visible="false" color="{_fontColor}">
+	<s:Group id="mainShadowContainer" width="100%" height="100%" visible="false" color="{_fontColor}" horizontalCenter="0" verticalCenter="0">
 		<s:BorderContainer cornerRadius="{_uiCornerRadius + 2}" backgroundColor="{_mianBackground}" left="12" right="12" top="12" bottom="12" filters="{[new spark.filters.DropShadowFilter(2,90,0,0.8,8,8)]}">
 			
 			<s:BorderContainer cornerRadius="{_uiCornerRadius}" id="titleContainer" left="2" right="2" top="2" height="24" horizontalCenter="0" backgroundColor="{_uiBackground}" mouseDown="{nativeWindow.startMove();}">
-				<s:Label verticalCenter="0" left="4" text="CetusEditor - v0.0.1"/>
+				<s:Image source="{icon}" left="-4" top="2" bottom="0" smooth="true"/>
+				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.1"/>
 				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}"/>
 			</s:BorderContainer>
 			
 			<s:BorderContainer id="displayContainerMask" cornerRadius="{_uiCornerRadius}" top="28" left="2" right="2" bottom="2" backgroundColor="{_uiBackground}"/>
-			<s:BorderContainer id="displayContainer" mask="{displayContainerMask}" cornerRadius="{_uiCornerRadius}" top="28" left="2" right="2" bottom="2" backgroundColor="{_uiBackground}">
+			<s:Group id="displayContainer" mask="{displayContainerMask}">
 				<mx:UIComponent id="SVGContainer" width="100%" height="100%"/>
+				<mx:UIComponent id="pathesContainer" width="100%" height="100%"/>
+				<mx:UIComponent id="nodesContainer" width="100%" height="100%"/>
+			</s:Group>
+			
+			<s:BorderContainer id="panelTool" cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}"/>
+				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="16" bottom="4" gap="1"/>
 			</s:BorderContainer>
 			
-			<s:BorderContainer cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
-				<s:VGroup width="100%" horizontalAlign="center" top="48" bottom="4">
-					<s:Group width="20" height="20">
-						<s:Label text="N" horizontalCenter="0"/>
-					</s:Group>
-					<s:Group width="20" height="20">
-						<s:Label text="P" horizontalCenter="0"/>
-					</s:Group>
-					<s:Group width="20" height="20">
-						<s:Label text="A" horizontalCenter="0"/>
-					</s:Group>
-					<s:Group width="20" height="20" click="openFile(event)">
-						<s:Label text="O" horizontalCenter="0"/>
-					</s:Group>
-					<s:Group width="20" height="20" click="openFile(event)">
-						<s:Label text="S" horizontalCenter="0"/>
-					</s:Group>
+			<s:BorderContainer id="panelFloor" cornerRadius="{_uiCornerRadius}" width="240" top="28" right="2" backgroundColor="{_uiBackground}">
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="238" height="12" mouseDown="{panelFloor.startDrag();}" mouseUp="{panelFloor.stopDrag();}"/>
+				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="16" change="onFloorDownListChange(event)"/>
+				<s:VGroup left="2" right="2" top="40" bottom="2" gap="0">
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="绑定"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="机位"/><s:TextInput id="machinePositionInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 				</s:VGroup>
-			</s:BorderContainer>
-			
-			<s:BorderContainer cornerRadius="{_uiCornerRadius}" width="240" height="240" top="28" right="2" backgroundColor="{_uiBackground}">
-				
 			</s:BorderContainer>
 		</s:BorderContainer>
 	</s:Group>
