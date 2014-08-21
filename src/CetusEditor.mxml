@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   width="1200" height="800" 
+					   showStatusBar="false" backgroundColor="0" backgroundAlpha="0" addedToStage="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.SVGParser;
+			import com.greensock.TweenLite;
+			import com.lorentz.SVG.display.SVGDocument;
+			import com.lorentz.SVG.display.base.SVGElement;
+			import com.lorentz.SVG.events.SVGEvent;
+			import com.lorentz.processing.ProcessExecutor;
+			
+			import spark.filters.DropShadowFilter;
+			
+			protected function init(event:Event):void
+			{
+				this.nativeWindow.x = (Capabilities.screenResolutionX - this.width) * 0.5;
+				this.nativeWindow.y = (Capabilities.screenResolutionY - this.height) * 0.5;
+				
+				ProcessExecutor.instance.initialize(stage);
+				
+				setTimeout(showMainContainer,500);
+			}
+			
+			private function showMainContainer():void
+			{
+				TweenLite.to(splashContainer,0.5,{alpha:0});
+				mainShadowContainer.visible = true;
+				mainShadowContainer.alpha = 0;
+				TweenLite.to(mainShadowContainer,0.5,{alpha:1});
+			}
+			
+			[Bindable] private var _uiBackground:uint = 0x444444;
+			[Bindable] private var _mianBackground:uint = 0x222222;
+			[Bindable] private var _fontColor:uint = 0xFFFFFF;
+			[Bindable] private var _uiCornerRadius:uint = 4;
+			
+			protected function openFile(event:MouseEvent):void
+			{
+				var file:File = new File();
+				file.browseForOpen("打开SVG文件"/*,[new FileFilter("SVG Files","*.svg")]*/);
+				file.addEventListener(Event.SELECT,function(e:Event):void{
+					var fs:FileStream = new FileStream();
+					fs.open(file,FileMode.UPDATE);
+					var origSVGString:String = fs.readUTFBytes(fs.bytesAvailable);
+					fs.close();
+					
+					origXML = SVGParser.coverToAllPath(origSVGString);
+					
+					var origSVG:SVGDocument = new SVGDocument();
+					origSVG.parse(origSVGString);
+					origSVG.addEventListener(SVGEvent.ELEMENT_ADDED,function(e:SVGEvent):void{
+						var elementClassName:String = getQualifiedClassName(e.element).split(":")[2];
+						switch(elementClassName){
+							case "SVG":			//SVG
+								break;	
+							case "SVGG":		//SVG FLOOR CONTAINER
+								trace(e.element.id);
+								e.element.visible = false;
+								break;
+							case "SVGPath":		//SVG PATH
+								break;
+							default:break;
+						}
+						e.element.addEventListener(MouseEvent.CLICK,onSVGElementClick);
+					});
+					
+					SVGContainer.addChild(origSVG);
+				});
+			}
+			
+			private var origXML:XML;
+			
+			protected function onSVGElementClick(event:MouseEvent):void
+			{
+				event.stopPropagation();
+				var element:SVGElement = event.target as SVGElement;
+				var nodeId:String = element.id;
+				trace("CURRENT_CLICK_NODE_ID:",nodeId);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Group id="splashContainer" horizontalCenter="0" verticalCenter="0">
+		<s:Image source="assets/logo.png" horizontalCenter="0" verticalCenter="0"/>
+		<s:Label text="loading..." color="0xDDDDDD" horizontalCenter="0" verticalCenter="0"/>
+	</s:Group>
+	<s:Group id="mainShadowContainer" width="100%" height="100%" visible="false" color="{_fontColor}">
+		<s:BorderContainer cornerRadius="{_uiCornerRadius + 2}" backgroundColor="{_mianBackground}" left="12" right="12" top="12" bottom="12" filters="{[new spark.filters.DropShadowFilter(2,90,0,0.8,8,8)]}">
+			
+			<s:BorderContainer cornerRadius="{_uiCornerRadius}" id="titleContainer" left="2" right="2" top="2" height="24" horizontalCenter="0" backgroundColor="{_uiBackground}" mouseDown="{nativeWindow.startMove();}">
+				<s:Label verticalCenter="0" left="4" text="CetusEditor - v0.0.1"/>
+				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}"/>
+			</s:BorderContainer>
+			
+			<s:BorderContainer id="displayContainerMask" cornerRadius="{_uiCornerRadius}" top="28" left="2" right="2" bottom="2" backgroundColor="{_uiBackground}"/>
+			<s:BorderContainer id="displayContainer" mask="{displayContainerMask}" cornerRadius="{_uiCornerRadius}" top="28" left="2" right="2" bottom="2" backgroundColor="{_uiBackground}">
+				<mx:UIComponent id="SVGContainer" width="100%" height="100%"/>
+			</s:BorderContainer>
+			
+			<s:BorderContainer cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
+				<s:VGroup width="100%" horizontalAlign="center" top="48" bottom="4">
+					<s:Group width="20" height="20">
+						<s:Label text="N" horizontalCenter="0"/>
+					</s:Group>
+					<s:Group width="20" height="20">
+						<s:Label text="P" horizontalCenter="0"/>
+					</s:Group>
+					<s:Group width="20" height="20">
+						<s:Label text="A" horizontalCenter="0"/>
+					</s:Group>
+					<s:Group width="20" height="20" click="openFile(event)">
+						<s:Label text="O" horizontalCenter="0"/>
+					</s:Group>
+					<s:Group width="20" height="20" click="openFile(event)">
+						<s:Label text="S" horizontalCenter="0"/>
+					</s:Group>
+				</s:VGroup>
+			</s:BorderContainer>
+			
+			<s:BorderContainer cornerRadius="{_uiCornerRadius}" width="240" height="240" top="28" right="2" backgroundColor="{_uiBackground}">
+				
+			</s:BorderContainer>
+		</s:BorderContainer>
+	</s:Group>
+</s:WindowedApplication>
