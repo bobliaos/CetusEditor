@@ -40,6 +40,7 @@ package com
 			var simpleXML:XML = XML(PATH_MODE_XML_STRING);
 			switch(xml.localName())
 			{
+				case "polyline":
 				case "polygon":
 					var polygonPointsArr:Array = xml.@points.split(" ");
 					var polygonPointsString:String = "M";
@@ -61,14 +62,34 @@ package com
 					var rectPointsString:String = "M" + origX + "," + origY + " L" + (origX + origWidth) + "," + origY + " L" + (origX + origWidth) + "," + (origY + origHeight) + " L" + origX + "," + (origY + origHeight) + "Z";
 					xml.@d = rectPointsString;
 					break;
+				case "circle":
+					var centerX:Number = xml.@cx;
+					var centerY:Number = xml.@cy;
+					var radius:Number = xml.@r;
+					var angleSegments:int = 24;
+					var circlePointString:String = "M";
+					for(var i:int = 0;i < angleSegments;i ++)
+					{
+						var angle:Number = i * (Math.PI * 2 / angleSegments);
+						var circlePoint:Point = new Point(Math.cos(angle) * radius + centerX,Math.sin(angle) * radius + centerY);
+						circlePointString += (circlePointString == 'M' ? '' : ' L') + circlePoint.x.toFixed(2) + "," + circlePoint.y.toFixed(2);
+					}
+					circlePointString += "Z";
+					xml.@d = circlePointString;
+					break;
 				default:
 					break;
 			}
 			
+			var dString:String = xml.@d;
+			if(dString.charAt(dString.length - 1).toUpperCase() != 'Z') 
+				xml.@d = dString + 'Z';
+			
 			var bindShopId:String = "";
 			if(xml.@bindShopId.toString() == "" && xml.@id.toString() != "")
 			{
-				bindShopId = xml.@id.split("_x")[1];
+//				bindShopId = xml.@id.split("_x")[1];
+				bindShopId = xml.@id;
 				bindShopId = bindShopId.replace("_","");
 				bindShopId = bindShopId.substring(1,bindShopId.length);
 			}
@@ -302,6 +323,9 @@ package com
 				if(point.x > maxX) maxX = point.x;
 				if(point.y > maxY) maxY = point.y;
 			}
+			var posX:Number = ((maxX - minX) * 0.5 + minX);
+			if(posX > 5000)
+				trace();
 			return ((maxX - minX) * 0.5 + minX).toFixed(2) + "," + ((maxY - minY) * 0.5 + minY).toFixed(2);
 		}
 		
