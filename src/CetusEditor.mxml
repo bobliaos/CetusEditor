@@ -38,6 +38,13 @@
 			[Bindable] private var floorDataProvider:ArrayCollection = new ArrayCollection([]);
 			
 			private var tools:Array = ["A","N","L","D","H","O","S"];
+			private var toolTips:Array = ["选择工具\n使用此工具可以选择 结点/路径/图形 等,选择之后在右边面板中可以进行数据维护",
+				"添加工具\n选择此工具,直接在地图上点击即可添加新结点",
+				"连接工具\n选择此工具后,点击任意结点会拖出一条路径,然后点击另外一个结点便可以连接两个结点",
+				"删除工具\n选择此工具后,点击 结点(蓝色)/路径 将其删除",
+				"拖手工具\n选择此工具以拖曳画板",
+				"打开工具\n点击此工具,将打开对话框,以打开一个图形文件",
+				"保存工具\n点击此工具,保存当前编辑的图形"];
 			private var selectedFilterArray:Array = [new flash.filters.DropShadowFilter(0,0,0xFF0000,1,6,6,2)];
 			
 			private var origXML:XML;
@@ -65,7 +72,6 @@
 			{
 				for(var i:int = 0;i < tools.length;i ++)
 				{
-					var tool:String = tools[i];
 					var container:BorderContainer = new BorderContainer();
 					toolsContainer.addElement(container);
 					container.width = 20;
@@ -75,11 +81,21 @@
 					container.setStyle("borderVisible",false);
 					container.addEventListener(MouseEvent.CLICK,onToolClick);
 					
+					var tool:String = tools[i];
+					var toolTip:String = toolTips[i];
+					
 					var label:Label = new Label();
 					container.addElement(label);
 					label.text = tool;
 					label.horizontalCenter = 0;
 					label.verticalCenter = 1;
+					
+					label.toolTip = toolTip;
+					
+					styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("fontSize","12");
+					styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("fontFamily","Microsoft Yahei");
+					styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("color","#0x000000");
+					styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("backgroundColor","#FFFF00");
 				}
 				
 				selectToolByChar("A");
@@ -396,6 +412,7 @@
 							var nodeId:String = pathXML.@nodeId.toString();
 							var node:Node = new Node(pathXML,floorXML.@id);
 							nodesContainer.addChild(node);
+//							logosContainer.addChild(node.logo);
 							node.visible = false;
 							nodes[nodeId] = node;
 						}
@@ -471,7 +488,7 @@
 				}
 				else
 				{
-					Alert.show("加载一个SVG文件先","o(︶︿︶)o 唉");
+					Alert.show("哎,智商拙计啊...\n请加载一个SVG文件先","o(︶︿︶)o");
 				}
 			}
 			
@@ -562,42 +579,43 @@
 		<s:BorderContainer cornerRadius="{_uiCornerRadius + 2}" backgroundColor="{_mianBackground}" left="0" right="0" top="0" bottom="0" borderWeight="3" borderAlpha="0.6" borderColor="0x222222">
 			
 			<s:BorderContainer cornerRadius="{_uiCornerRadius}" id="titleContainer" left="2" right="2" top="2" height="24" horizontalCenter="0" backgroundColor="{_uiBackground}" mouseDown="{nativeWindow.startMove();}">
-				<s:Image source="{icon}" left="-4" top="2" bottom="0" smooth="true"/>
+				<s:Image source="{icon}" left="-4" top="2" bottom="0" smooth="true" toolTip="办证 18682004968"/>
 				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.1"/>
-				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}"/>
+				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}" toolTip="虽然我长的丑了点,但我确实是关闭按钮 点我之前,我还有话要说,你确定你已经保存了?如果没有请点击左边工具栏 S 工具"/>
 			</s:BorderContainer>
 			
 			<s:BorderContainer id="displayContainerMask" cornerRadius="{_uiCornerRadius}" top="28" left="2" right="2" bottom="2" backgroundColor="{_uiBackground}"/>
 			<s:Group id="displayContainer" mask="{displayContainerMask}">
 				<mx:UIComponent id="SVGContainer"/>
+				<s:Group id="logosContainer"/>
 				<mx:UIComponent id="pathesContainer"/>
 				<mx:UIComponent id="nodesContainer"/>
 			</s:Group>
 			
 			<s:BorderContainer id="panelTool" cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
-				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}"/>
-				<s:CheckBox id="isJSONCheckBox" horizontalCenter="2" top="12" />
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}" toolTip="你敢拖我就敢动"/>
+				<s:CheckBox id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
 				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="32" bottom="4" gap="1"/>
 			</s:BorderContainer>
 			
 			<s:BorderContainer id="panelFloor" cornerRadius="{_uiCornerRadius}" width="240" top="28" right="2" backgroundColor="{_uiBackground}">
-				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="238" height="12" mouseDown="{panelFloor.startDrag();}" mouseUp="{panelFloor.stopDrag();}"/>
-				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="16" change="onFloorDownListChange(event)"/>
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="238" height="12" mouseDown="{panelFloor.startDrag();}" mouseUp="{panelFloor.stopDrag();}" toolTip="越脱越感动"/>
+				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="16" change="onFloorDownListChange(event)" toolTip="选择楼层"/>
 				<s:VGroup left="2" right="2" top="40" bottom="2" gap="0">
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					
 					<s:Group width="100%" height="20"/>
 					<s:Label text="结点关联:"/>
 					<s:HGroup width="100%"><s:TextInput id="nodeIdStartInput" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:TextInput id="nodeIdEndInput" width="100%"/></s:HGroup>
-					<s:HGroup width="100%"><s:Button label="点击连接结点" width="100%" click="onLinkBtnClick(event)"/></s:HGroup>
+					<s:HGroup width="100%"><s:Button label="点击连接结点" width="100%" click="onLinkBtnClick(event)" toolTip="哎,你也是蛮拼的,不过这个工具跟你没什么关系,放开它让我来"/></s:HGroup>
 				</s:VGroup>
 			</s:BorderContainer>
 		</s:BorderContainer>
