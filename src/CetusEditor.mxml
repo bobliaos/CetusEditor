@@ -65,7 +65,7 @@
 				ProcessExecutor.instance.initialize(stage);
 				addTools();
 				
-				setTimeout(showMainContainer,2500);
+				setTimeout(showMainContainer,1500);
 			}
 			
 			private function addTools():void
@@ -594,7 +594,7 @@
 			
 			<s:BorderContainer id="panelTool" cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
 				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}" toolTip="你敢拖我就敢动"/>
-				<s:CheckBox id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
+				<s:CheckBox selected="true" id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
 				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="32" bottom="4" gap="1"/>
 			</s:BorderContainer>
 			

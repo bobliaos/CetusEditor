@@ -43,6 +43,9 @@ package
 			
 			this.pathes = [];
 			
+//			var logoContainer:Sprite = new Sprite();
+//			this.addChild(logoContainer);
+//			logoContainer.mouseChildren = logoContainer.mouseEnabled = false;
 			this.logo = new Bitmap(LOGO_BITMAP_DATA,"auto",true);
 			this.addChild(this.logo);
 			
