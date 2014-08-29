@@ -65,6 +65,15 @@
 				ProcessExecutor.instance.initialize(stage);
 				addTools();
 				
+				stage.addEventListener(MouseEvent.MOUSE_WHEEL,function(e:MouseEvent):void{
+					var centerX:Number = stage.mouseX;
+					var centerY:Number = stage.mouseY;
+					var deltaScale:Number = e.delta * 0.01;
+					displayContainer.scaleX = displayContainer.scaleY = displayContainer.scaleY + deltaScale;
+					displayContainer.x -= deltaScale * centerX;
+					displayContainer.y -= deltaScale * centerY;
+				});
+				
 				setTimeout(showMainContainer,1500);
 			}
 			
@@ -285,6 +294,7 @@
 				fillInput.text = "";
 				deepInput.text = "";
 				dInput.text = "";
+				textureInput.text = "";
 			}
 			
 			private function selectTarget(obj:*):void
@@ -322,6 +332,7 @@
 					fillInput.text = curEditingNodeXML.@fill;
 					deepInput.text = curEditingNodeXML.@deep;
 					dInput.text = curEditingNodeXML.@d;
+					textureInput.text = curEditingNodeXML.@textureData;
 				}
 			}
 			
@@ -525,6 +536,7 @@
 					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@fill = fillInput.text;
 					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@deep = deepInput.text;
 					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@d = dInput.text;
+					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@textureData = textureInput.text;
 					
 					currentSelectedNode.updateDisplay();
 				}
@@ -610,6 +622,7 @@
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:TextInput id="textureInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					
 					<s:Group width="100%" height="20"/>
 					<s:Label text="结点关联:"/>

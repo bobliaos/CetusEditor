@@ -6,10 +6,12 @@ package com
 	{
 		private static var svgXML:XML;
 		
-		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' bindShopId='' fill='' deep='' d=''/>";
-		private static const DEFAULT_NODE_TYPE_ID:String = "-1";
+		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='' bindShopId='' fill='' deep='' d=''/>";
+//		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='f,t,30*30,1.1' bindShopId='' fill='' deep='' d=''/>";
+//																						textureData = [isTexture:true/flase],[textureType:text/image/both],[textureSize:20:20],[textureRotation:Math.PI]
+		private static const DEFAULT_NODE_TYPE_ID:String = "2";
 		private static const DEFAULT_FILL:String = "#FFFFFF";
-		private static const DEFAULT_DEEP:String = "30";
+		private static const DEFAULT_DEEP:String = "20";
 		private static const DEFAULT_D:String = "";
 		
 		public function SVGParser()
@@ -102,6 +104,7 @@ package com
 			simpleXML.@nodeTypeId = xml.@nodeTypeId.toString() != "" ? xml.@nodeTypeId : DEFAULT_NODE_TYPE_ID;
 			simpleXML.@bindNodeIds = xml.@bindNodeIds.toString() != "" ? xml.@bindNodeIds : "";
 			simpleXML.@bindShopId = bindShopId;
+			simpleXML.@textureData = xml.@textureData.toString() != "" ? xml.@textureData : "f,b,20*20,10";
 			simpleXML.@fill = xml.@fill.toString() != "" ? xml.@fill : DEFAULT_FILL;
 			simpleXML.@deep = xml.@deep.toString() != "" ? xml.@deep : DEFAULT_DEEP;
 			simpleXML.@d = xml.@d.toString() != "" ? xml.@d : DEFAULT_D;
@@ -337,9 +340,9 @@ package com
 		
 		private static function getClearedXML(SVGString:String):XML
 		{
-			SVGString = SVGString.replace(/\r/g,"");
-			SVGString = SVGString.replace(/\n/g,"");
-			SVGString = SVGString.replace(/\t/g,"");
+			SVGString = SVGString.replace(/\r/g," ");
+			SVGString = SVGString.replace(/\n/g," ");
+			SVGString = SVGString.replace(/\t/g," ");
 			
 			var svgXML:XML = XML(SVGString);
 //			svgXML.normalize();
