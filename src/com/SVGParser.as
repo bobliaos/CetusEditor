@@ -109,6 +109,7 @@ package com
 			simpleXML.@deep = xml.@deep.toString() != "" ? xml.@deep : DEFAULT_DEEP;
 			simpleXML.@d = xml.@d.toString() != "" ? xml.@d : DEFAULT_D;
 			simpleXML.@nodePosition = xml.@nodePosition.toString() != "" ? xml.@nodePosition : calculateNodePosition(simpleXML.@d);
+//			simpleXML.@nodePosition = calculateNodePosition(simpleXML.@d);
 			return simpleXML;
 		}
 		
@@ -335,7 +336,8 @@ package com
 		private static function generateNodeId():String
 		{
 			var date:Date = new Date();
-			return "node_" + date.fullYear + "_" + (date.month + 1) + "_" + date.date + "_" + date.toLocaleTimeString().split(" ")[0] + "_" + int(Math.random() * 10000);
+			var nodeId:String = "node_" + date.fullYear + ":" + (date.month + 1) + ":" + date.date + ":" + date.toLocaleTimeString().split(" ")[0] + ":" + date.milliseconds + ":" + int(Math.random() * 1000);
+			return nodeId;
 		}
 		
 		private static function getClearedXML(SVGString:String):XML

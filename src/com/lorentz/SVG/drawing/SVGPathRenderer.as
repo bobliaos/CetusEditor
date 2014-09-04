@@ -77,7 +77,7 @@
 		}
 		
 		private function closePath():void {
-			_drawer.lineTo(firstPoint.x, firstPoint.y);
+			if(firstPoint) _drawer.lineTo(firstPoint.x, firstPoint.y);
 		}
 		
 		private function moveTo(command:SVGMoveToCommand):void {

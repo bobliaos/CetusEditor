@@ -21,6 +21,7 @@
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			
+			import spark.components.RichEditableText;
 			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
 			
@@ -31,7 +32,7 @@
 			private var IconClass:Class;
 			[Bindable] private var icon:Bitmap = new IconClass();
 			
-			[Bindable] private var _uiBackground:uint = 0x444444;	
+			[Bindable] private var _uiBackground:uint = 0x444444;
 			[Bindable] private var _mianBackground:uint = 0x222222;
 			[Bindable] private var _fontColor:uint = 0xFFFFFF;
 			[Bindable] private var _uiCornerRadius:uint = 4;
@@ -111,9 +112,12 @@
 				
 				displayContainer.addEventListener(MouseEvent.MOUSE_DOWN,onDisplayContainerMouseDown);
 				this.stage.addEventListener(KeyboardEvent.KEY_DOWN,function(e:KeyboardEvent):void{
+					if(!(e.target is RichEditableText))
+					{
 						var char:String = String.fromCharCode(e.charCode).toUpperCase();
 						if(tools.indexOf(char) > -1)
 							selectToolByChar(char);
+					}
 				});
 			}
 			
@@ -444,6 +448,11 @@
 								{
 									if(path.startNode == startPathNode && path.endNode == bindNode) isExist = true;
 									if(path.startNode == bindNode && path.endNode == startPathNode) isExist = true;
+									
+									if(path.startNode.floorId != path.endNode.floorId)
+									{
+										trace("CROSS FLOORS PATH:",path.startNode.nodeId,path.endNode.nodeId,path.startNode.floorId,path.endNode.floorId);
+									}
 								}
 								
 								if(!isExist)
@@ -529,14 +538,14 @@
 					var nodeId:String = currentSelectedNode.nodeId;
 					var floorId:String = currentSelectedNode.floorId;
 					
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@nodeTypeId = nodeTypeIdInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@bindNodeIds = bindNodeIdsInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@bindShopId = bindShopIdInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@nodePosition = nodePositionInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@fill = fillInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@deep = deepInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@d = dInput.text;
-					origXML.children().(@id == floorId).children().(@nodeId == nodeId)[0].@textureData = textureInput.text;
+					currentSelectedNode.sourceXML.@nodeTypeId = nodeTypeIdInput.text;
+					currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
+					currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
+					currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
+					currentSelectedNode.sourceXML.@fill = fillInput.text;
+					currentSelectedNode.sourceXML.@deep = deepInput.text;
+					currentSelectedNode.sourceXML.@d = dInput.text;
+					currentSelectedNode.sourceXML.@textureData = textureInput.text;
 					
 					currentSelectedNode.updateDisplay();
 				}
@@ -592,7 +601,7 @@
 			
 			<s:BorderContainer cornerRadius="{_uiCornerRadius}" id="titleContainer" left="2" right="2" top="2" height="24" horizontalCenter="0" backgroundColor="{_uiBackground}" mouseDown="{nativeWindow.startMove();}">
 				<s:Image source="{icon}" left="-4" top="2" bottom="0" smooth="true" toolTip="办证 18682004968"/>
-				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.1"/>
+				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.2"/>
 				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}" toolTip="虽然我长的丑了点,但我确实是关闭按钮 点我之前,我还有话要说,你确定你已经保存了?如果没有请点击左边工具栏 S 工具"/>
 			</s:BorderContainer>
 			
@@ -606,7 +615,7 @@
 			
 			<s:BorderContainer id="panelTool" cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
 				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}" toolTip="你敢拖我就敢动"/>
-				<s:CheckBox selected="true" id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
+				<s:CheckBox selected="false" id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
 				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="32" bottom="4" gap="1"/>
 			</s:BorderContainer>
 			
@@ -616,7 +625,7 @@
 				<s:VGroup left="2" right="2" top="40" bottom="2" gap="0">
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="true"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
