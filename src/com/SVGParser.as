@@ -110,6 +110,7 @@ package com
 			simpleXML.@d = xml.@d.toString() != "" ? xml.@d : DEFAULT_D;
 			simpleXML.@nodePosition = xml.@nodePosition.toString() != "" ? xml.@nodePosition : calculateNodePosition(simpleXML.@d);
 //			simpleXML.@nodePosition = calculateNodePosition(simpleXML.@d);
+//			if(simpleXML.@nodeTypeId == "4" || simpleXML.@nodeTypeId == "5") simpleXML.@bindNodeIds = "";
 			return simpleXML;
 		}
 		

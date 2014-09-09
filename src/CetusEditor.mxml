@@ -452,6 +452,15 @@
 									if(path.startNode.floorId != path.endNode.floorId)
 									{
 										trace("CROSS FLOORS PATH:",path.startNode.nodeId,path.endNode.nodeId,path.startNode.floorId,path.endNode.floorId);
+										var origStart:String = path.startNode.sourceXML.@bindNodeIds;
+										origStart = origStart.replace(path.endNode.nodeId,"");
+										origStart = origStart.replace(",,",",");
+										path.startNode.sourceXML.@bindNodeIds = origStart;
+										
+										var origEnd:String = path.endNode.sourceXML.@bindNodeIds;
+										origEnd = origEnd.replace(path.startNode.nodeId,"");
+										origEnd = origEnd.replace(",,",",");
+										path.endNode.sourceXML.@bindNodeIds = origEnd;
 									}
 								}
 								
@@ -625,10 +634,10 @@
 				<s:VGroup left="2" right="2" top="40" bottom="2" gap="0">
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="true"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:TextInput id="textureInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
