@@ -258,28 +258,29 @@
 			
 			private function deletePath(path:NodePath):void
 			{
+				//应当整合到Node中
+				
 				path.startNode.pathes.splice(path.startNode.pathes.indexOf(path),1);
 				path.endNode.pathes.splice(path.endNode.pathes.indexOf(path),1);
 				
 				if(path.parent) path.parent.removeChild(path);
-				
 				pathes.splice(pathes.indexOf(path),1);
 				
 				var startNodeId:String = path.startNode.nodeId;
 				var endNodeId:String = path.endNode.nodeId;
 				var curSelectedFloorId:String = floorDownList.selectedItem;
 				
-				var str:String;
+				var origStart:String = path.startNode.sourceXML.@bindNodeIds;
+				origStart = origStart.replace(path.endNode.nodeId,"");
+				origStart = origStart.replace(",,",",");
+				if(origStart == ",") origStart = "";
+				path.startNode.sourceXML.@bindNodeIds = origStart;
 				
-				str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds;
-				str = str.replace(endNodeId,"");
-				str = str.replace(",,",",");
-				origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds = str;
-				
-				str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds;
-				str = str.replace(startNodeId,"");
-				str = str.replace(",,",",");
-				origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds = str;
+				var origEnd:String = path.endNode.sourceXML.@bindNodeIds;
+				origEnd = origEnd.replace(path.startNode.nodeId,"");
+				origEnd = origEnd.replace(",,",",");
+				if(origStart == ",") origStart = "";
+				path.endNode.sourceXML.@bindNodeIds = origEnd;
 				
 				path = null;
 			}
@@ -452,15 +453,7 @@
 									if(path.startNode.floorId != path.endNode.floorId)
 									{
 										trace("CROSS FLOORS PATH:",path.startNode.nodeId,path.endNode.nodeId,path.startNode.floorId,path.endNode.floorId);
-										var origStart:String = path.startNode.sourceXML.@bindNodeIds;
-										origStart = origStart.replace(path.endNode.nodeId,"");
-										origStart = origStart.replace(",,",",");
-										path.startNode.sourceXML.@bindNodeIds = origStart;
-										
-										var origEnd:String = path.endNode.sourceXML.@bindNodeIds;
-										origEnd = origEnd.replace(path.startNode.nodeId,"");
-										origEnd = origEnd.replace(",,",",");
-										path.endNode.sourceXML.@bindNodeIds = origEnd;
+//										deletePath(path);
 									}
 								}
 								
@@ -484,7 +477,7 @@
 								displayContainer.graphics.beginFill(0x888888,1);
 								displayContainer.graphics.drawRect(0,0,(e.element as ISVGViewBox).svgViewBox.width,(e.element as ISVGViewBox).svgViewBox.height);
 								displayContainer.graphics.endFill();
-								break;	
+								break;
 							case "SVGG":		//SVG FLOOR CONTAINER
 								floorDataProvider.source.push(e.element.id);
 								displaySVGFloorElements.push(e.element);
@@ -492,6 +485,7 @@
 								break;
 							case "SVGPath":		//SVG PATH
 								displaySVGPathElements.push(e.element);
+								nodes[e.element.id].displaySVGPath = e.element;
 								break;
 							default:break;
 						}
@@ -556,7 +550,13 @@
 					currentSelectedNode.sourceXML.@d = dInput.text;
 					currentSelectedNode.sourceXML.@textureData = textureInput.text;
 					
+//					SVGContainer.removeChild(mainSVG);
+//					mainSVG = new SVGDocument();
+//					mainSVG.parse(origXML);
+//					SVGContainer.addChild(mainSVG);
+					
 					currentSelectedNode.updateDisplay();
+					
 				}
 			}
 			
@@ -639,7 +639,7 @@
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:TextInput id="textureInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					
 					<s:Group width="100%" height="20"/>

@@ -1,5 +1,12 @@
 package
 {
+	import com.SVGParser;
+	import com.lorentz.SVG.display.SVGDocument;
+	import com.lorentz.SVG.display.SVGPath;
+	import com.lorentz.SVG.events.SVGEvent;
+	import com.lorentz.SVG.parser.SVGParserCommon;
+	import com.lorentz.SVG.utils.SVGUtil;
+	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Loader;
@@ -13,10 +20,13 @@ package
 
 	public class Node extends Sprite
 	{
+		protected namespace svg = "http://www.w3.org/2000/svg";
+		
 		public var sourceXML:XML;
 		public var pathes:Array;
 		public var floorId:String;
 		public var nodeId:String;
+		public var displaySVGPath:SVGPath;
 		
 		private var logoSize:Number = 40;
 		private var NULL_BITMAP_DATA:BitmapData = new BitmapData(1,1,true,0);
@@ -98,6 +108,22 @@ package
 			}
 					
 			//重绘附加的SVG显示对象
+			if(displaySVGPath){
+//				displaySVGPath.parent.removeChild(displaySVGPath);
+//				displaySVGPath = null;
+				
+//				var doc:SVGDocument = new SVGDocument();
+//				doc.parse(sourceXML);
+//				doc.addEventListener(SVGEvent.ELEMENT_ADDED,function(e:SVGEvent):void{
+//					var container:Sprite = displaySVGPath.parent as Sprite;					container.removeChild(displaySVGPath);
+//					
+//					var element:SVGPath = e.element as SVGPath;
+//					container.addChild(doc);
+//					container.addChild(element);
+//					
+//					displaySVGPath = element;
+//				});
+			}
 		}
 	}
 }
