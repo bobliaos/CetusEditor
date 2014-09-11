@@ -13,6 +13,7 @@ package
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.filters.DropShadowFilter;
 	import flash.geom.Matrix;
 	import flash.net.URLRequest;
 	
@@ -43,6 +44,22 @@ package
 			"7":"toilet.png",
 			"8":"service.png",
 			"9":"atm.png"
+		};
+		
+		private static const selectedFilterArray:Array = [new DropShadowFilter(0,0,0xFF0000,1,6,6,2)];
+		private var _selected:Boolean = false;
+		public function set selected(value:Boolean):void
+		{
+			_selected = value;
+			
+			this.filters = value ? selectedFilterArray : [];
+			
+			if(this.displaySVGPath)
+				this.displaySVGPath.filters = value ? selectedFilterArray : [];
+		}
+		public function addPath(path:NodePath):void
+		{
+			pathes.push(path);
 		}
 		
 		public function Node(pathXML:XML,floorId:String)
@@ -50,21 +67,19 @@ package
 			this.sourceXML = pathXML;
 			this.floorId = floorId;
 			this.nodeId = pathXML.@nodeId;
+			this.alpha = 0.8;
 			
 			this.pathes = [];
 			
-//			var logoContainer:Sprite = new Sprite();
-//			this.addChild(logoContainer);
-//			logoContainer.mouseChildren = logoContainer.mouseEnabled = false;
 			this.logo = new Bitmap(LOGO_BITMAP_DATA,"auto",true);
 			this.addChild(this.logo);
 			
 			updateDisplay();
 		}
 		
-		public function addPath(path:NodePath):void
+		public function get selected():Boolean
 		{
-			pathes.push(path);
+			return _selected;
 		}
 		
 		public function updateDisplay():void
@@ -72,7 +87,7 @@ package
 			this.x = sourceXML.@nodePosition.split(',')[0];
 			this.y = sourceXML.@nodePosition.split(',')[1];
 			
-			var radius:Number = 4;
+			var radius:Number = 2;
 			this.graphics.clear();
 			this.graphics.beginFill(0x222222,0.2);
 			this.graphics.drawCircle(0,0,radius + 2);
@@ -109,20 +124,18 @@ package
 					
 			//重绘附加的SVG显示对象
 			if(displaySVGPath){
-//				displaySVGPath.parent.removeChild(displaySVGPath);
-//				displaySVGPath = null;
-				
-//				var doc:SVGDocument = new SVGDocument();
-//				doc.parse(sourceXML);
-//				doc.addEventListener(SVGEvent.ELEMENT_ADDED,function(e:SVGEvent):void{
-//					var container:Sprite = displaySVGPath.parent as Sprite;					container.removeChild(displaySVGPath);
-//					
-//					var element:SVGPath = e.element as SVGPath;
-//					container.addChild(doc);
-//					container.addChild(element);
-//					
-//					displaySVGPath = element;
-//				});
+				var doc:SVGDocument = new SVGDocument();
+				doc.parse(sourceXML);
+				doc.addEventListener(SVGEvent.ELEMENT_ADDED,function(e:SVGEvent):void{
+					var container:Sprite = displaySVGPath.parent as Sprite;
+					var index:int = container.getChildIndex(displaySVGPath);
+					container.removeChild(displaySVGPath);
+					
+					var element:SVGPath = e.element as SVGPath;
+					container.addChildAt(doc,index);
+					
+					displaySVGPath = element;
+				});
 			}
 		}
 	}

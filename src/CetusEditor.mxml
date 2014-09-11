@@ -46,7 +46,6 @@
 				"拖手工具\n选择此工具以拖曳画板",
 				"打开工具\n点击此工具,将打开对话框,以打开一个图形文件",
 				"保存工具\n点击此工具,保存当前编辑的图形"];
-			private var selectedFilterArray:Array = [new flash.filters.DropShadowFilter(0,0,0xFF0000,1,6,6,2)];
 			
 			private var origXML:XML;
 			private var nodes:Object = {};
@@ -289,6 +288,7 @@
 			
 			private function clearCurSelectedNode():void
 			{
+				if(currentSelectedNode) currentSelectedNode.selected = false;
 				currentSelectedNode = null;
 				
 				nodeIdInput.text = "";
@@ -296,7 +296,7 @@
 				bindNodeIdsInput.text = "";
 				bindShopIdInput.text = "";
 				nodePositionInput.text = "";
-				fillInput.text = "";
+				fillInput.selectedColor = 0;
 				deepInput.text = "";
 				dInput.text = "";
 				textureInput.text = "";
@@ -308,18 +308,21 @@
 				
 				for each(var node:Node in nodes) 
 				{
-					node.filters = (node == obj) ? selectedFilterArray : [];
-					if(node == obj) currentSelectedNode = node;
-				}
-				for each(var element:SVGPath in displaySVGPathElements)
-				{
-					element.filters = (element == obj) ? selectedFilterArray : [];
-					if(element == obj)
+					if(node == obj || node.displaySVGPath == obj) 
 					{
-						currentSelectedNode = nodes[element.id];
+						currentSelectedNode = node;
+						currentSelectedNode.selected = true;
 					}
 				}
-				for each(var path:NodePath in pathes) path.filters = (path == obj) ? selectedFilterArray : [];
+//				for each(var element:SVGPath in displaySVGPathElements)
+//				{
+//					element.filters = (element == obj) ? selectedFilterArray : [];
+//					if(element == obj)
+//					{
+//						currentSelectedNode = nodes[element.id];
+//					}
+//				}
+//				for each(var path:NodePath in pathes) path.filters = (path == obj) ? selectedFilterArray : [];
 				
 				updatePanelDisplay();
 			}
@@ -334,7 +337,8 @@
 					bindNodeIdsInput.text = curEditingNodeXML.@bindNodeIds;
 					bindShopIdInput.text = curEditingNodeXML.@bindShopId;
 					nodePositionInput.text = curEditingNodeXML.@nodePosition;
-					fillInput.text = curEditingNodeXML.@fill;
+//					fillInput.text = curEditingNodeXML.@fill;
+					fillInput.selectedColor = parseInt(String(curEditingNodeXML.@fill).replace("#",""),16);
 					deepInput.text = curEditingNodeXML.@deep;
 					dInput.text = curEditingNodeXML.@d;
 					textureInput.text = curEditingNodeXML.@textureData;
@@ -534,7 +538,7 @@
 				}
 			}
 			
-			protected function onInputChangee(event:TextOperationEvent):void
+			protected function onInputChangee(event:Event):void
 			{
 				if(currentSelectedNode)
 				{
@@ -545,18 +549,12 @@
 					currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
 					currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
 					currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
-					currentSelectedNode.sourceXML.@fill = fillInput.text;
+					currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
 					currentSelectedNode.sourceXML.@deep = deepInput.text;
 					currentSelectedNode.sourceXML.@d = dInput.text;
 					currentSelectedNode.sourceXML.@textureData = textureInput.text;
 					
-//					SVGContainer.removeChild(mainSVG);
-//					mainSVG = new SVGDocument();
-//					mainSVG.parse(origXML);
-//					SVGContainer.addChild(mainSVG);
-					
 					currentSelectedNode.updateDisplay();
-					
 				}
 			}
 			
@@ -637,7 +635,8 @@
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<!--<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>-->
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><mx:ColorPicker id="fillInput" change="onInputChangee(event)"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:TextInput id="textureInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
