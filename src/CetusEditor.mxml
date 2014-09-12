@@ -3,7 +3,7 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx" 
 					   width="1200" height="800" 
-					   showStatusBar="false" fontFamily="Microsoft Yahei" backgroundColor="0" backgroundAlpha="0" addedToStage="init(event)">
+					   showStatusBar="false" fontFamily="Microsoft Yahei" backgroundColor="0" backgroundAlpha="0" addedToStage="init(event)" xmlns:style="com.lorentz.SVG.data.style.*">
 	<fx:Script>
 		<![CDATA[
 			import com.SVGParser;
@@ -146,7 +146,7 @@
 								var nodeId:String = dragNode.nodeId;
 								origXML.children().(@id == floorDownList.selectedItem)[0].children().(@nodeId == nodeId)[0].@nodePosition = nodePosition;
 								
-								updatePanelDisplay();
+								updateInputs();
 							};
 							
 							displayContainer.addEventListener(MouseEvent.MOUSE_OUT,dragOver);
@@ -290,16 +290,7 @@
 			{
 				if(currentSelectedNode) currentSelectedNode.selected = false;
 				currentSelectedNode = null;
-				
-				nodeIdInput.text = "";
-				nodeTypeIdInput.text = "";
-				bindNodeIdsInput.text = "";
-				bindShopIdInput.text = "";
-				nodePositionInput.text = "";
-				fillInput.selectedColor = 0;
-				deepInput.text = "";
-				dInput.text = "";
-				textureInput.text = "";
+				updateInputs();
 			}
 			
 			private function selectTarget(obj:*):void
@@ -314,20 +305,10 @@
 						currentSelectedNode.selected = true;
 					}
 				}
-//				for each(var element:SVGPath in displaySVGPathElements)
-//				{
-//					element.filters = (element == obj) ? selectedFilterArray : [];
-//					if(element == obj)
-//					{
-//						currentSelectedNode = nodes[element.id];
-//					}
-//				}
-//				for each(var path:NodePath in pathes) path.filters = (path == obj) ? selectedFilterArray : [];
-				
-				updatePanelDisplay();
+				updateInputs();
 			}
 			
-			private function updatePanelDisplay():void
+			private function updateInputs():void
 			{
 				if(currentSelectedNode)
 				{
@@ -337,11 +318,53 @@
 					bindNodeIdsInput.text = curEditingNodeXML.@bindNodeIds;
 					bindShopIdInput.text = curEditingNodeXML.@bindShopId;
 					nodePositionInput.text = curEditingNodeXML.@nodePosition;
-//					fillInput.text = curEditingNodeXML.@fill;
 					fillInput.selectedColor = parseInt(String(curEditingNodeXML.@fill).replace("#",""),16);
 					deepInput.text = curEditingNodeXML.@deep;
 					dInput.text = curEditingNodeXML.@d;
-					textureInput.text = curEditingNodeXML.@textureData;
+					
+					var textureData:String = curEditingNodeXML.@textureData; //"f,b,20*20,10"
+					var arr:Array = textureData.split(",");
+					isMappingCheckBox.selected = arr[0] == "t";
+					mappingTypeDropDownList.selectedItem = arr[1];
+					mappingWidthInput.text = arr[2].split("*")[0];
+					mappingHeightInput.text = arr[2].split("*")[1];
+					mappingAngleInput.text = arr[3];
+				}
+				else
+				{
+					nodeIdInput.text = "";
+					nodeTypeIdInput.text = "";
+					bindNodeIdsInput.text = "";
+					bindShopIdInput.text = "";
+					nodePositionInput.text = "";
+					fillInput.selectedColor = 0;
+					deepInput.text = "";
+					dInput.text = "";
+					
+					isMappingCheckBox.selected = false;
+					mappingTypeDropDownList.selectedItem = "";
+					mappingWidthInput.text = "";
+					mappingHeightInput.text = "";
+					mappingAngleInput.text = "";
+				}
+			}
+			
+			protected function onInputChangee(event:Event):void
+			{
+				if(currentSelectedNode)
+				{
+					currentSelectedNode.sourceXML.@nodeTypeId = nodeTypeIdInput.text;
+					currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
+					currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
+					currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
+					currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
+					currentSelectedNode.sourceXML.@deep = deepInput.text;
+					currentSelectedNode.sourceXML.@d = dInput.text;
+					
+					var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleInput.text;
+					currentSelectedNode.sourceXML.@textureData = textureData;
+					
+					currentSelectedNode.updateDisplay();
 				}
 			}
 			
@@ -434,7 +457,17 @@
 							nodesContainer.addChild(node);
 //							logosContainer.addChild(node.logo);
 							node.visible = false;
-							nodes[nodeId] = node;
+							if(nodes[nodeId]) 
+							{
+								trace("- [CetusEditor].openFile:ERROR:",nodeId);
+								var newNodeId:String = SVGParser.generateNodeId();
+								node.sourceXML.@nodeId = newNodeId;
+								nodes[newNodeId] = node;
+							}
+							else
+							{
+								nodes[nodeId] = node;
+							}
 						}
 					}
 					
@@ -538,26 +571,6 @@
 				}
 			}
 			
-			protected function onInputChangee(event:Event):void
-			{
-				if(currentSelectedNode)
-				{
-					var nodeId:String = currentSelectedNode.nodeId;
-					var floorId:String = currentSelectedNode.floorId;
-					
-					currentSelectedNode.sourceXML.@nodeTypeId = nodeTypeIdInput.text;
-					currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
-					currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
-					currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
-					currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
-					currentSelectedNode.sourceXML.@deep = deepInput.text;
-					currentSelectedNode.sourceXML.@d = dInput.text;
-					currentSelectedNode.sourceXML.@textureData = textureInput.text;
-					
-					currentSelectedNode.updateDisplay();
-				}
-			}
-			
 			protected function onLinkBtnClick(event:MouseEvent):void
 			{
 				var nodeIdStart:String = nodeIdStartInput.text;
@@ -621,25 +634,30 @@
 			</s:Group>
 			
 			<s:BorderContainer id="panelTool" cornerRadius="{_uiCornerRadius}" width="24" top="28" left="2" backgroundColor="{_uiBackground}">
-				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="12" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}" toolTip="你敢拖我就敢动"/>
-				<s:CheckBox selected="false" id="isJSONCheckBox" horizontalCenter="2" top="12" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
-				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="32" bottom="4" gap="1"/>
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="22" height="18" mouseDown="{panelTool.startDrag();}" mouseUp="{panelTool.stopDrag();}" toolTip="你敢拖我就敢动"/>
+				<s:CheckBox selected="false" id="isJSONCheckBox" horizontalCenter="2" top="20" toolTip="勾选进行JSON格式的 打开/保存,反选进行XML格式的 打开/保存" />
+				<s:VGroup id="toolsContainer" width="100%" horizontalAlign="center" top="40" bottom="4" gap="1"/>
 			</s:BorderContainer>
 			
-			<s:BorderContainer id="panelFloor" cornerRadius="{_uiCornerRadius}" width="240" top="28" right="2" backgroundColor="{_uiBackground}">
-				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="238" height="12" mouseDown="{panelFloor.startDrag();}" mouseUp="{panelFloor.stopDrag();}" toolTip="越脱越感动"/>
-				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="16" change="onFloorDownListChange(event)" toolTip="选择楼层"/>
-				<s:VGroup left="2" right="2" top="40" bottom="2" gap="0">
+			<s:BorderContainer id="panelFloor" cornerRadius="{_uiCornerRadius}" width="400" top="28" right="2" backgroundColor="{_uiBackground}">
+				<s:BorderContainer cornerRadius="{_uiCornerRadius - 1}" backgroundColor="{_uiBackground}" width="100%" height="18" mouseDown="{panelFloor.startDrag();}" mouseUp="{panelFloor.stopDrag();}" toolTip="越脱越感动"/>
+				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="20" change="onFloorDownListChange(event)" toolTip="选择楼层"/>
+				<s:VGroup left="2" right="2" top="50" bottom="2" gap="0">
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
-					<!--<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><s:TextInput id="fillInput" change="onInputChangee(event)" width="100%"/></s:HGroup>-->
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><mx:ColorPicker id="fillInput" change="onInputChangee(event)"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:TextInput id="textureInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%">
+						<s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:CheckBox id="isMappingCheckBox" change="onInputChangee(event)"/>
+						<s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:DropDownList dataProvider="{new ArrayCollection(['t','i','b'])}" width="50" id="mappingTypeDropDownList" change="onInputChangee(event)"/>
+						<s:Label height="100%" verticalAlign="middle" width="30" text="宽度"/><s:TextInput width="30" id="mappingWidthInput" change="onInputChangee(event)"/>
+						<s:Label height="100%" verticalAlign="middle" width="30" text="高度"/><s:TextInput width="30" id="mappingHeightInput" change="onInputChangee(event)"/>
+						<s:Label height="100%" verticalAlign="middle" width="30" text="角度"/><s:TextInput id="mappingAngleInput" width="100%" change="onInputChangee(event)"/>
+					</s:HGroup>
 					
 					<s:Group width="100%" height="20"/>
 					<s:Label text="结点关联:"/>

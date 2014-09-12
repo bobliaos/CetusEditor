@@ -67,7 +67,7 @@ package
 			this.sourceXML = pathXML;
 			this.floorId = floorId;
 			this.nodeId = pathXML.@nodeId;
-			this.alpha = 0.8;
+			this.alpha = 1;
 			
 			this.pathes = [];
 			
@@ -90,9 +90,9 @@ package
 			var radius:Number = 2;
 			this.graphics.clear();
 			this.graphics.beginFill(0x222222,0.2);
-			this.graphics.drawCircle(0,0,radius + 2);
-			this.graphics.beginFill(0xFFFFFF,1);
 			this.graphics.drawCircle(0,0,radius + 1);
+			this.graphics.beginFill(0xFFFFFF,1);
+			this.graphics.drawCircle(0,0,radius + 0.5);
 			var color:uint = sourceXML.@nodeTypeId == "0" ? 0x0099CC : 0xFF0033;
 			color = sourceXML.@nodeTypeId == "3" ? 0xFFFF00 : color;
 			color = sourceXML.@nodeTypeId == "2" ? 0xBBBBBB : color;

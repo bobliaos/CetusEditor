@@ -8,7 +8,7 @@ package com
 		
 		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='' bindShopId='' fill='' deep='' d=''/>";
 //		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='f,t,30*30,1.1' bindShopId='' fill='' deep='' d=''/>";
-//																						textureData = [isTexture:true/flase],[textureType:text/image/both],[textureSize:20:20],[textureRotation:Math.PI]
+//																						textureData = [isTexture:true/flase],[textureType:text/image/both],[textureSize:20*20],[textureRotation:Math.PI]
 		private static const DEFAULT_NODE_TYPE_ID:String = "2";
 		private static const DEFAULT_FILL:String = "#FFFFFF";
 		private static const DEFAULT_DEEP:String = "20";
@@ -334,7 +334,7 @@ package com
 			return ((maxX - minX) * 0.5 + minX).toFixed(2) + "," + ((maxY - minY) * 0.5 + minY).toFixed(2);
 		}
 		
-		private static function generateNodeId():String
+		public static function generateNodeId():String
 		{
 			var date:Date = new Date();
 			var nodeId:String = "node_" + date.fullYear + ":" + (date.month + 1) + ":" + date.date + ":" + date.toLocaleTimeString().split(" ")[0] + ":" + date.milliseconds + ":" + int(Math.random() * 1000);

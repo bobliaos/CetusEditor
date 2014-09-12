@@ -19,11 +19,12 @@ package
 		
 		public function updateDisplay():void
 		{
+			var lineWeight:Number = 1.5;
 			this.graphics.clear();
-			this.graphics.lineStyle(4,0x222222,0.2);
+			this.graphics.lineStyle(lineWeight * 2,0x222222,0.2);
 			this.graphics.moveTo(startNode.x,startNode.y);
 			this.graphics.lineTo(endNode.x,endNode.y);	
-			this.graphics.lineStyle(2,0xFF6699,1);
+			this.graphics.lineStyle(lineWeight,0xFF6699,1);
 			this.graphics.moveTo(startNode.x,startNode.y);
 			this.graphics.lineTo(endNode.x,endNode.y);
 			this.graphics.endFill();
