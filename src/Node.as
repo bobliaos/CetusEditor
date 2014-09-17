@@ -9,6 +9,7 @@ package
 	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.DisplayObject;
 	import flash.display.Loader;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -16,6 +17,7 @@ package
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Matrix;
 	import flash.net.URLRequest;
+	import flash.utils.getQualifiedClassName;
 	
 	import mx.controls.Image;
 
@@ -29,7 +31,7 @@ package
 		public var nodeId:String;
 		public var displaySVGPath:SVGPath;
 		
-		private var logoSize:Number = 40;
+		private var logoSize:Number = 20;
 		private var NULL_BITMAP_DATA:BitmapData = new BitmapData(1,1,true,0);
 		private var LOGO_BITMAP_DATA:BitmapData = new BitmapData(logoSize,logoSize,true,0);
 		public var logo:Bitmap;
@@ -67,7 +69,7 @@ package
 			this.sourceXML = pathXML;
 			this.floorId = floorId;
 			this.nodeId = pathXML.@nodeId;
-			this.alpha = 1;
+			this.alpha = 0.7;
 			
 			this.pathes = [];
 			
@@ -107,7 +109,7 @@ package
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,function(e:Event):void{
 					var bitmap:Bitmap = loader.content as Bitmap;
 					logo.bitmapData = LOGO_BITMAP_DATA;
-					logo.x = - logoSize * 0.5;
+					logo.x = - logoSize * 0.3;
 					logo.y = - logoSize;
 					LOGO_BITMAP_DATA.fillRect(LOGO_BITMAP_DATA.rect,0x00000000);
 					LOGO_BITMAP_DATA.draw(loader.content,new Matrix(logoSize / bitmap.bitmapData.width,0,0,logoSize / bitmap.bitmapData.height));
@@ -136,6 +138,16 @@ package
 					
 					displaySVGPath = element;
 				});
+				
+				if(sourceXML.@nodeTypeId == "1")
+				{
+					var tmp:DisplayObject = displaySVGPath;
+					while(getQualifiedClassName(tmp.parent) != "com.lorentz.SVG.display::SVG" && tmp.parent != stage)
+					{
+						tmp = tmp.parent as DisplayObject;
+						tmp.parent.setChildIndex(tmp,0);
+					}
+				};
 			}
 		}
 	}

@@ -522,7 +522,7 @@
 								break;
 							case "SVGPath":		//SVG PATH
 								displaySVGPathElements.push(e.element);
-								nodes[e.element.id].displaySVGPath = e.element;
+								if(nodes[e.element.id]) nodes[e.element.id].displaySVGPath = e.element;
 								break;
 							default:break;
 						}
@@ -650,7 +650,7 @@
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><mx:ColorPicker id="fillInput" change="onInputChangee(event)"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="true"/></s:HGroup>
 					<s:HGroup width="100%">
 						<s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:CheckBox id="isMappingCheckBox" change="onInputChangee(event)"/>
 						<s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:DropDownList dataProvider="{new ArrayCollection(['t','i','b'])}" width="50" id="mappingTypeDropDownList" change="onInputChangee(event)"/>

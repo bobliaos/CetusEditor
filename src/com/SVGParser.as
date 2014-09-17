@@ -98,6 +98,10 @@ package com
 			else if(xml.@bindShopId.toString() != "")
 			{
 				bindShopId = xml.@bindShopId.toString();
+//				bindShopId = bindShopId.replace("31_","");
+//				bindShopId = bindShopId.replace("32_","");
+//				bindShopId = bindShopId.replace("_1_","");
+//				bindShopId = bindShopId.replace("_2_","");
 			}
 			
 			simpleXML.@nodeId = xml.@nodeId.toString() != "" ? xml.@nodeId : generateNodeId();
@@ -346,6 +350,10 @@ package com
 			SVGString = SVGString.replace(/\r/g," ");
 			SVGString = SVGString.replace(/\n/g," ");
 			SVGString = SVGString.replace(/\t/g," ");
+			
+			SVGString = SVGString.replace("xml:space=\"preserve\"","");
+			SVGString = SVGString.replace("xmlns:aaa=\"http://www.w3.org/XML/1998/namespace\"","");
+			SVGString = SVGString.replace("aaa:space=\"preserve\"","");
 			
 			var svgXML:XML = XML(SVGString);
 //			svgXML.normalize();
