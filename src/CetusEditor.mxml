@@ -38,7 +38,7 @@
 			[Bindable] private var _uiCornerRadius:uint = 4;
 			[Bindable] private var floorDataProvider:ArrayCollection = new ArrayCollection([]);
 			
-			private var tools:Array = ["A","N","L","D","H","X","Y","O","S"];
+			private var tools:Array = ["A","N","L","D","H","X","Y","O","S","I"];
 			private var toolTips:Array = ["选择工具\n使用此工具可以选择 结点/路径/图形 等,选择之后在右边面板中可以进行数据维护",
 				"添加工具\n选择此工具,直接在地图上点击即可添加新结点",
 				"连接工具\n选择此工具后,点击任意结点会拖出一条路径,然后点击另外一个结点便可以连接两个结点",
@@ -47,7 +47,9 @@
 				"水平对齐\n选择此工具以水平对齐",
 				"垂直对齐\n选择此工具以垂直对齐",
 				"打开工具\n点击此工具,将打开对话框,以打开一个图形文件",
-				"保存工具\n点击此工具,保存当前编辑的图形"];
+				"保存工具\n点击此工具,保存当前编辑的图形",
+				"导入工具\n点击此工具,导入店铺数据",
+			];
 			
 			private var origXML:XML;
 			private var nodes:Object = {};
@@ -378,6 +380,7 @@
 				currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
 				currentSelectedNode.sourceXML.@deep = deepInput.text;
 				currentSelectedNode.sourceXML.@d = dInput.text;
+				currentSelectedNode.sourceXML.@shopName = shopNameInput.text;
 				
 				var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleInput.text;
 				currentSelectedNode.sourceXML.@textureData = textureData;
@@ -396,6 +399,7 @@
 				fillInput.selectedColor = parseInt(String(curEditingNodeXML.@fill).replace("#",""),16);
 				deepInput.text = curEditingNodeXML.@deep;
 				dInput.text = curEditingNodeXML.@d;
+				shopNameInput.text = curEditingNodeXML.@shopName;
 				
 				var textureData:String = curEditingNodeXML.@textureData; //"f,b,20*20,10"
 				var arr:Array = textureData.split(",");
@@ -416,6 +420,7 @@
 				fillInput.selectedColor = 0;
 				deepInput.text = "";
 				dInput.text = "";
+				shopNameInput.text = "";
 				
 				isMappingCheckBox.selected = false;
 				mappingTypeDropDownList.selectedItem = "";
@@ -460,6 +465,52 @@
 					saveFile();
 					selectToolByChar("A");
 				}
+				else if(char == tools[9])
+				{
+					inportShopFile();
+					selectToolByChar("A");
+				}
+			}
+			
+			private function inportShopFile():void
+			{
+				if(!origXML)
+				{
+					Alert.show("还没有加载地图文件!");
+					return;
+				}
+				
+				var file:File = new File();
+				file.browseForOpen("打开店铺列表JSON文件"/*,[new FileFilter("SVG Files","*.svg")]*/);
+				file.addEventListener(Event.SELECT,function(e:Event):void{
+					var fs:FileStream = new FileStream();
+					fs.open(file,FileMode.UPDATE);
+					var shopListJSONString:String = fs.readUTFBytes(fs.bytesAvailable);
+					fs.close();
+					
+					var shopList:Object;
+					try{
+						shopList = JSON.parse(shopListJSONString);
+						
+						for each(var shop:Object in shopList)
+						{
+							for each(var node:Node in nodes)
+							{
+								if(shop.shop_room == node.sourceXML.@bindShopId)
+								{
+									node.sourceXML.@shopName = shop.name;
+									break;
+								}
+							}
+						}
+						
+					}catch(e:Error){
+						Alert.show("解析JSON失败!");
+						return;
+					}
+					
+					
+				});
 			}
 			
 			private function unSelectedAllTools():void
@@ -705,6 +756,7 @@
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" restrict="0-9 \-" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="名称"/><s:TextInput id="shopNameInput" change="onInputChangee(event)" width="100%" editable="false" toolTip="店铺名称"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" restrict="0-9 \-," toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><mx:ColorPicker id="fillInput" change="onInputChangee(event)"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度" restrict="0-9 \-"/></s:HGroup>

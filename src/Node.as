@@ -17,9 +17,12 @@ package
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Matrix;
 	import flash.net.URLRequest;
+	import flash.text.TextField;
+	import flash.text.TextFormat;
 	import flash.utils.getQualifiedClassName;
 	
 	import mx.controls.Image;
+	import mx.controls.Label;
 
 	public class Node extends Sprite
 	{
@@ -35,6 +38,7 @@ package
 		private var NULL_BITMAP_DATA:BitmapData = new BitmapData(1,1,true,0);
 		private var LOGO_BITMAP_DATA:BitmapData = new BitmapData(logoSize,logoSize,true,0);
 		public var logo:Bitmap;
+		private var label:TextField;
 		private const noteTypeLogos:Object = {
 			"0":"",
 			"1":"",
@@ -76,6 +80,15 @@ package
 			this.logo = new Bitmap(LOGO_BITMAP_DATA,"auto",true);
 			this.addChild(this.logo);
 			
+			this.label = new TextField();
+			this.addChild(this.label);
+			
+			this.label.background = true;
+			this.label.backgroundColor = 0xFF0033;
+			this.label.defaultTextFormat = new TextFormat("Microsoft Yahei",12,0xFFFFFF);
+
+			this.label.visible = false;
+			
 			updateDisplay();
 		}
 		
@@ -105,6 +118,7 @@ package
 			var logoURL:String = noteTypeLogos[sourceXML.@nodeTypeId];
 			if(logoURL && logoURL != "")
 			{
+				logo.visible = true;
 				var loader:Loader = new Loader();
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,function(e:Event):void{
 					var bitmap:Bitmap = loader.content as Bitmap;
@@ -120,6 +134,7 @@ package
 			}
 			else
 			{
+				logo.visible = false;
 				logo.bitmapData = NULL_BITMAP_DATA;
 				logo.x = logo.y = 0;
 			}
@@ -155,6 +170,16 @@ package
 					}
 				};
 			}
+			
+			//更新贴图
+//			var textureData:String = sourceXML.@textureData; //"f,b,20*20,10"
+//			var arr:Array = textureData.split(",");
+//			this.label.visible = arr[0] == "t";
+//			mappingTypeDropDownList.selectedItem = arr[1];
+//			this.label.width = arr[2].split("*")[0];
+//			this.label.height = arr[2].split("*")[1];
+//			this.label.text = this.sourceXML.@shopName;
+//			this.label.setTextFormat(this.label.defaultTextFormat);
 		}
 	}
 }
