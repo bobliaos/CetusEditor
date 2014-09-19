@@ -38,12 +38,14 @@
 			[Bindable] private var _uiCornerRadius:uint = 4;
 			[Bindable] private var floorDataProvider:ArrayCollection = new ArrayCollection([]);
 			
-			private var tools:Array = ["A","N","L","D","H","O","S"];
+			private var tools:Array = ["A","N","L","D","H","X","Y","O","S"];
 			private var toolTips:Array = ["选择工具\n使用此工具可以选择 结点/路径/图形 等,选择之后在右边面板中可以进行数据维护",
 				"添加工具\n选择此工具,直接在地图上点击即可添加新结点",
 				"连接工具\n选择此工具后,点击任意结点会拖出一条路径,然后点击另外一个结点便可以连接两个结点",
 				"删除工具\n选择此工具后,点击 结点(蓝色)/路径 将其删除",
 				"拖手工具\n选择此工具以拖曳画板",
+				"水平对齐\n选择此工具以水平对齐",
+				"垂直对齐\n选择此工具以垂直对齐",
 				"打开工具\n点击此工具,将打开对话框,以打开一个图形文件",
 				"保存工具\n点击此工具,保存当前编辑的图形"];
 			
@@ -144,7 +146,8 @@
 								
 								var nodePosition:String = dragNode.x + "," + dragNode.y;
 								var nodeId:String = dragNode.nodeId;
-								origXML.children().(@id == floorDownList.selectedItem)[0].children().(@nodeId == nodeId)[0].@nodePosition = nodePosition;
+								currentSelectedNode.sourceXML.@nodePosition = nodePosition;
+//								origXML.children().(@id == floorDownList.selectedItem)[0].children().(@nodeId == nodeId)[0].@nodePosition = nodePosition;
 								
 								updateInputs();
 							};
@@ -188,13 +191,13 @@
 								
 								var str:String;
 								
-								str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds + "," + endNodeId;
+								str = path.startNode.sourceXML.@bindNodeIds + "," + endNodeId;
 								if(str.charAt(0) == ",") str = str.substr(1,str.length - 1);
-								origXML.children().(@id == curSelectedFloorId).children().(@nodeId == startNodeId)[0].@bindNodeIds = str;
+								path.startNode.sourceXML.@bindNodeIds = str;
 								
-								str = origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds + "," + startNodeId;
+								str = path.endNode.sourceXML.@bindNodeIds + "," + startNodeId;
 								if(str.charAt(0) == ",") str = str.substr(1,str.length - 1);
-								origXML.children().(@id == curSelectedFloorId).children().(@nodeId == endNodeId)[0].@bindNodeIds = str;
+								path.endNode.sourceXML.@bindNodeIds = str;
 							}
 							else
 							{
@@ -237,6 +240,44 @@
 							displayContainer.stopDrag();
 							displayContainer.removeEventListener(MouseEvent.MOUSE_UP,arguments.callee);
 						});
+						break;
+					case tools[5]:
+						if(obj is Node)
+						{
+							if(!currentSelectedNode)
+							{
+								selectTarget(obj);
+							}
+							else
+							{
+								var preNode:Node = currentSelectedNode;
+								selectTarget(obj);
+								currentSelectedNode.y = preNode.y;
+								
+								var strForX:String = currentSelectedNode.x + "," + currentSelectedNode.y;
+								currentSelectedNode.sourceXML.@nodePosition = strForX;
+								currentSelectedNode.updateDisplay();
+							}
+						}
+						break;
+					case tools[6]:
+						if(obj is Node)
+						{
+							if(!currentSelectedNode)
+							{
+								selectTarget(obj);
+							}
+							else
+							{
+								var preNodeForY:Node = currentSelectedNode;
+								selectTarget(obj);
+								currentSelectedNode.x = preNodeForY.x;
+								
+								var strForY:String = currentSelectedNode.x + "," + currentSelectedNode.y;
+								currentSelectedNode.sourceXML.@nodePosition = strForY;
+								currentSelectedNode.updateDisplay();
+							}
+						}
 						break;
 					default:break;
 				}
@@ -312,40 +353,11 @@
 			{
 				if(currentSelectedNode)
 				{
-					var curEditingNodeXML:XML = currentSelectedNode.sourceXML;
-					nodeIdInput.text = curEditingNodeXML.@nodeId;
-					nodeTypeIdInput.text = curEditingNodeXML.@nodeTypeId;
-					bindNodeIdsInput.text = curEditingNodeXML.@bindNodeIds;
-					bindShopIdInput.text = curEditingNodeXML.@bindShopId;
-					nodePositionInput.text = curEditingNodeXML.@nodePosition;
-					fillInput.selectedColor = parseInt(String(curEditingNodeXML.@fill).replace("#",""),16);
-					deepInput.text = curEditingNodeXML.@deep;
-					dInput.text = curEditingNodeXML.@d;
-					
-					var textureData:String = curEditingNodeXML.@textureData; //"f,b,20*20,10"
-					var arr:Array = textureData.split(",");
-					isMappingCheckBox.selected = arr[0] == "t";
-					mappingTypeDropDownList.selectedItem = arr[1];
-					mappingWidthInput.text = arr[2].split("*")[0];
-					mappingHeightInput.text = arr[2].split("*")[1];
-					mappingAngleInput.text = arr[3];
+					setPanel();
 				}
 				else
 				{
-					nodeIdInput.text = "";
-					nodeTypeIdInput.text = "";
-					bindNodeIdsInput.text = "";
-					bindShopIdInput.text = "";
-					nodePositionInput.text = "";
-					fillInput.selectedColor = 0;
-					deepInput.text = "";
-					dInput.text = "";
-					
-					isMappingCheckBox.selected = false;
-					mappingTypeDropDownList.selectedItem = "";
-					mappingWidthInput.text = "";
-					mappingHeightInput.text = "";
-					mappingAngleInput.text = "";
+					clearPanel();
 				}
 			}
 			
@@ -353,19 +365,63 @@
 			{
 				if(currentSelectedNode)
 				{
-					currentSelectedNode.sourceXML.@nodeTypeId = nodeTypeIdInput.text;
-					currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
-					currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
-					currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
-					currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
-					currentSelectedNode.sourceXML.@deep = deepInput.text;
-					currentSelectedNode.sourceXML.@d = dInput.text;
-					
-					var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleInput.text;
-					currentSelectedNode.sourceXML.@textureData = textureData;
-					
-					currentSelectedNode.updateDisplay();
+					setCurrentSelectedNodeSource();
 				}
+			}
+			
+			protected function setCurrentSelectedNodeSource():void
+			{
+				currentSelectedNode.sourceXML.@nodeTypeId = nodeTypeIdInput.text;
+				currentSelectedNode.sourceXML.@bindNodeIds = bindNodeIdsInput.text;
+				currentSelectedNode.sourceXML.@bindShopId = bindShopIdInput.text;
+				currentSelectedNode.sourceXML.@nodePosition = nodePositionInput.text;
+				currentSelectedNode.sourceXML.@fill = "#" + fillInput.selectedColor.toString(16);
+				currentSelectedNode.sourceXML.@deep = deepInput.text;
+				currentSelectedNode.sourceXML.@d = dInput.text;
+				
+				var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleInput.text;
+				currentSelectedNode.sourceXML.@textureData = textureData;
+				
+				currentSelectedNode.updateDisplay();
+			}
+			
+			protected function setPanel():void
+			{
+				var curEditingNodeXML:XML = currentSelectedNode.sourceXML;
+				nodeIdInput.text = curEditingNodeXML.@nodeId;
+				nodeTypeIdInput.text = curEditingNodeXML.@nodeTypeId;
+				bindNodeIdsInput.text = curEditingNodeXML.@bindNodeIds;
+				bindShopIdInput.text = curEditingNodeXML.@bindShopId;
+				nodePositionInput.text = curEditingNodeXML.@nodePosition;
+				fillInput.selectedColor = parseInt(String(curEditingNodeXML.@fill).replace("#",""),16);
+				deepInput.text = curEditingNodeXML.@deep;
+				dInput.text = curEditingNodeXML.@d;
+				
+				var textureData:String = curEditingNodeXML.@textureData; //"f,b,20*20,10"
+				var arr:Array = textureData.split(",");
+				isMappingCheckBox.selected = arr[0] == "t";
+				mappingTypeDropDownList.selectedItem = arr[1];
+				mappingWidthInput.text = arr[2].split("*")[0];
+				mappingHeightInput.text = arr[2].split("*")[1];
+				mappingAngleInput.text = arr[3];
+			}
+			
+			protected function clearPanel():void
+			{
+				nodeIdInput.text = "";
+				nodeTypeIdInput.text = "";
+				bindNodeIdsInput.text = "";
+				bindShopIdInput.text = "";
+				nodePositionInput.text = "";
+				fillInput.selectedColor = 0;
+				deepInput.text = "";
+				dInput.text = "";
+				
+				isMappingCheckBox.selected = false;
+				mappingTypeDropDownList.selectedItem = "";
+				mappingWidthInput.text = "";
+				mappingHeightInput.text = "";
+				mappingAngleInput.text = "";
 			}
 			
 			private function onDisplayContainerMouseMove(e:MouseEvent):void
@@ -394,12 +450,12 @@
 					}
 				}
 				
-				if(char == tools[5])
+				if(char == tools[7])
 				{
 					openFile();
 					selectToolByChar("A");
 				}
-				else if(char == tools[6])
+				else if(char == tools[8])
 				{
 					saveFile();
 					selectToolByChar("A");
@@ -569,6 +625,8 @@
 				{
 					path.visible = path.startNode.floorId == path.endNode.floorId && path.startNode.floorId == floorId;
 				}
+				
+				clearPanel();
 			}
 			
 			protected function onLinkBtnClick(event:MouseEvent):void
@@ -621,7 +679,7 @@
 			
 			<s:BorderContainer cornerRadius="{_uiCornerRadius}" id="titleContainer" left="2" right="2" top="2" height="24" horizontalCenter="0" backgroundColor="{_uiBackground}" mouseDown="{nativeWindow.startMove();}">
 				<s:Image source="{icon}" left="-4" top="2" bottom="0" smooth="true" toolTip="办证 18682004968"/>
-				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.2"/>
+				<s:Label verticalCenter="0" left="24" text="CetusEditor - v0.0.5"/>
 				<s:BorderContainer backgroundColor="0xFFFFFF" borderVisible="false" cornerRadius="6" right="2" top="2" bottom="2" width="20" height="20" click="{this.nativeApplication.exit();}" toolTip="虽然我长的丑了点,但我确实是关闭按钮 点我之前,我还有话要说,你确定你已经保存了?如果没有请点击左边工具栏 S 工具"/>
 			</s:BorderContainer>
 			
@@ -644,13 +702,13 @@
 				<s:DropDownList id="floorDownList" prompt="Select Floor" width="100%" dataProvider="{floorDataProvider}" top="20" change="onFloorDownListChange(event)" toolTip="选择楼层"/>
 				<s:VGroup left="2" right="2" top="50" bottom="2" gap="0">
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="ID"/><s:TextInput id="nodeIdInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:TextInput id="nodeTypeIdInput" change="onInputChangee(event)" restrict="0-9 \-" width="100%" toolTip="类型列表:0:寻路结点,1:地形,2:店铺,3:机器位置,4:扶梯,5:升降梯,6:楼梯,7:洗手间,8:服务台,9:自动提款机"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="路径"/><s:TextInput id="bindNodeIdsInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="店铺"/><s:TextInput id="bindShopIdInput" change="onInputChangee(event)" width="100%" toolTip="选中结点/区域所对应的店铺号"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="位置"/><s:TextInput id="nodePositionInput" change="onInputChangee(event)" width="100%" restrict="0-9 \-," toolTip="结点位置,对于区域来说,就是其文字/图标贴图位置,调整此位置能够调整贴图位置"/></s:HGroup>
 					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="填充"/><mx:ColorPicker id="fillInput" change="onInputChangee(event)"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度"/></s:HGroup>
-					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="true"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="深度"/><s:TextInput id="deepInput" change="onInputChangee(event)" width="100%" toolTip="区域生成3D模型后的高度" restrict="0-9 \-"/></s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="数据"/><s:TextInput id="dInput" change="onInputChangee(event)" width="100%" editable="false"/></s:HGroup>
 					<s:HGroup width="100%">
 						<s:Label height="100%" verticalAlign="middle" width="30" text="贴图"/><s:CheckBox id="isMappingCheckBox" change="onInputChangee(event)"/>
 						<s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:DropDownList dataProvider="{new ArrayCollection(['t','i','b'])}" width="50" id="mappingTypeDropDownList" change="onInputChangee(event)"/>

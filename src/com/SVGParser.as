@@ -321,10 +321,10 @@ package com
 				activeCmd = svgPathData.charAt(idx++);
 			}
 			
-			var minX:Number = Number.MAX_VALUE;
-			var minY:Number = Number.MAX_VALUE;
-			var maxX:Number = Number.MIN_VALUE;
-			var maxY:Number = Number.MIN_VALUE;
+			var minX:Number = 5000;
+			var minY:Number = 5000;
+			var maxX:Number = -5000;
+			var maxY:Number = -5000;
 			for each(var point:Point in points)
 			{
 				if(point.x < minX) minX = point.x;
@@ -332,9 +332,6 @@ package com
 				if(point.x > maxX) maxX = point.x;
 				if(point.y > maxY) maxY = point.y;
 			}
-			var posX:Number = ((maxX - minX) * 0.5 + minX);
-			if(posX > 5000)
-				trace();
 			return ((maxX - minX) * 0.5 + minX).toFixed(2) + "," + ((maxY - minY) * 0.5 + minY).toFixed(2);
 		}
 		
@@ -354,8 +351,23 @@ package com
 			SVGString = SVGString.replace("xml:space=\"preserve\"","");
 			SVGString = SVGString.replace("xmlns:aaa=\"http://www.w3.org/XML/1998/namespace\"","");
 			SVGString = SVGString.replace("aaa:space=\"preserve\"","");
+			SVGString = SVGString.replace(/display=\"none\"/g,"");
 			
 			var svgXML:XML = XML(SVGString);
+			
+			if(svgXML.@near.toString() == "") svgXML.@near = 1;
+			if(svgXML.@far.toString() == "") svgXML.@far = 28000;
+			if(svgXML.@fov.toString() == "") svgXML.@fov = 25;
+			if(svgXML.@minDistance.toString() == "") svgXML.@minDistance = 1200;
+			if(svgXML.@maxDistance.toString() == "") svgXML.@maxDistance = 2500;
+			if(svgXML.@minX.toString() == "") svgXML.@minX = -300;
+			if(svgXML.@maxX.toString() == "") svgXML.@maxX = 300;
+			if(svgXML.@minY.toString() == "") svgXML.@minY = -150;
+			if(svgXML.@maxY.toString() == "") svgXML.@maxY = 250;
+			if(svgXML.@minFloorPositionZ.toString() == "") svgXML.@minFloorPositionZ = -12400;
+			if(svgXML.@maxFloorPositionZ.toString() == "") svgXML.@maxFloorPositionZ = 11500;
+			if(svgXML.@floorGap.toString() == "") svgXML.@floorGap = 800;
+			
 //			svgXML.normalize();
 			return svgXML;
 		}

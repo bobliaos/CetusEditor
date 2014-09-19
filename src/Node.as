@@ -123,6 +123,12 @@ package
 				logo.bitmapData = NULL_BITMAP_DATA;
 				logo.x = logo.y = 0;
 			}
+			
+			//重绘PATH
+			for each(var path:NodePath in pathes)
+			{
+				path.updateDisplay();
+			}
 					
 			//重绘附加的SVG显示对象
 			if(displaySVGPath){
