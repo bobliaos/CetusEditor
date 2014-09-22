@@ -6,11 +6,12 @@ package com
 	{
 		private static var svgXML:XML;
 		
-		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='' bindShopId='' fill='' deep='' d=''/>";
+		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='' bindShopId='' shopName='' fill='' deep='' d=''/>";
 //		private static const PATH_MODE_XML_STRING:String = "<path nodeId='' nodeTypeId='' bindNodeIds='' nodePosition='' textureData='f,t,30*30,1.1' bindShopId='' fill='' deep='' d=''/>";
 //																						textureData = [isTexture:true/flase],[textureType:text/image/both],[textureSize:20*20],[textureRotation:Math.PI]
 		private static const DEFAULT_NODE_TYPE_ID:String = "2";
 		private static const DEFAULT_FILL:String = "#FFFFFF";
+		private static const DEFAULT_TEXTURE_DATA:String = "f,b,20*20,10";
 		private static const DEFAULT_DEEP:String = "20";
 		private static const DEFAULT_D:String = "";
 		
@@ -90,7 +91,6 @@ package com
 			var bindShopId:String = "";
 			if(xml.@bindShopId.toString() == "" && xml.@id.toString() != "")
 			{
-//				bindShopId = xml.@id.split("_x")[1];
 				bindShopId = xml.@id;
 				bindShopId = bindShopId.replace("_","");
 				bindShopId = bindShopId.substring(1,bindShopId.length);
@@ -108,7 +108,8 @@ package com
 			simpleXML.@nodeTypeId = xml.@nodeTypeId.toString() != "" ? xml.@nodeTypeId : DEFAULT_NODE_TYPE_ID;
 			simpleXML.@bindNodeIds = xml.@bindNodeIds.toString() != "" ? xml.@bindNodeIds : "";
 			simpleXML.@bindShopId = bindShopId;
-			simpleXML.@textureData = xml.@textureData.toString() != "" ? xml.@textureData : "f,b,20*20,10";
+			simpleXML.@shopName = xml.@shopName.toString() != "" ? xml.@shopName : "";
+			simpleXML.@textureData = xml.@textureData.toString() != "" ? xml.@textureData : DEFAULT_TEXTURE_DATA;
 			simpleXML.@fill = xml.@fill.toString() != "" ? xml.@fill : DEFAULT_FILL;
 			simpleXML.@deep = xml.@deep.toString() != "" ? xml.@deep : DEFAULT_DEEP;
 			simpleXML.@d = xml.@d.toString() != "" ? xml.@d : DEFAULT_D;

@@ -25,6 +25,9 @@
 			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
 			
+			[Embed(source="assets/fonts/msyh.ttf",embedAsCFF="false",fontName="bbfont")]
+			private var BBFont:Class;
+			
 			[Embed(source="assets/logo.png")]
 			private var LogoClass:Class;
 			[Bindable] private var logo:Bitmap = new LogoClass();
@@ -382,7 +385,7 @@
 				currentSelectedNode.sourceXML.@d = dInput.text;
 				currentSelectedNode.sourceXML.@shopName = shopNameInput.text;
 				
-				var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleInput.text;
+				var textureData:String = (isMappingCheckBox.selected ? "t" : "f") + "," + mappingTypeDropDownList.selectedItem + "," + mappingWidthInput.text + "*" + mappingHeightInput.text + "," + mappingAngleSlider.value;
 				currentSelectedNode.sourceXML.@textureData = textureData;
 				
 				currentSelectedNode.updateDisplay();
@@ -407,7 +410,7 @@
 				mappingTypeDropDownList.selectedItem = arr[1];
 				mappingWidthInput.text = arr[2].split("*")[0];
 				mappingHeightInput.text = arr[2].split("*")[1];
-				mappingAngleInput.text = arr[3];
+				mappingAngleSlider.value = parseInt(arr[3]);
 			}
 			
 			protected function clearPanel():void
@@ -426,7 +429,7 @@
 				mappingTypeDropDownList.selectedItem = "";
 				mappingWidthInput.text = "";
 				mappingHeightInput.text = "";
-				mappingAngleInput.text = "";
+				mappingAngleSlider.value = 0;
 			}
 			
 			private function onDisplayContainerMouseMove(e:MouseEvent):void
@@ -766,8 +769,9 @@
 						<s:Label height="100%" verticalAlign="middle" width="30" text="类型"/><s:DropDownList dataProvider="{new ArrayCollection(['t','i','b'])}" width="50" id="mappingTypeDropDownList" change="onInputChangee(event)"/>
 						<s:Label height="100%" verticalAlign="middle" width="30" text="宽度"/><s:TextInput width="30" id="mappingWidthInput" change="onInputChangee(event)"/>
 						<s:Label height="100%" verticalAlign="middle" width="30" text="高度"/><s:TextInput width="30" id="mappingHeightInput" change="onInputChangee(event)"/>
-						<s:Label height="100%" verticalAlign="middle" width="30" text="角度"/><s:TextInput id="mappingAngleInput" width="100%" change="onInputChangee(event)"/>
+			<!--			<s:Label height="100%" verticalAlign="middle" width="30" text="角度"/><s:TextInput id="mappingAngleInput" width="100%" change="onInputChangee(event)"/>-->
 					</s:HGroup>
+					<s:HGroup width="100%"><s:Label height="100%" verticalAlign="middle" width="30" text="角度"/><s:HSlider id="mappingAngleSlider" maximum="360" minimum="0" change="onInputChangee(event)" width="100%"/></s:HGroup>
 					
 					<s:Group width="100%" height="20"/>
 					<s:Label text="结点关联:"/>
