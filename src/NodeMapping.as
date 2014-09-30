@@ -13,6 +13,8 @@ package
 	
 	public class NodeMapping extends Sprite
 	{
+		private const MAX_FONT_SIZE:int = 256;
+		
 		public var isMapping:Boolean = false;
 		public var isTextMapping:Boolean = false;
 		public var sizePoint:Point = new Point();
@@ -91,7 +93,7 @@ package
 				var fontSize:int = 2;
 				var tf:TextFormat = new TextFormat(null,fontSize,null,null,null,null,null,null,TextAlign.CENTER);
 				label.setTextFormat(tf);
-				while((label.textWidth + 4 < labelWidth && label.textHeight + 4 < labelHeight) && fontSize < 128)
+				while((label.textWidth + 4 < labelWidth && label.textHeight + 4 < labelHeight) && fontSize < MAX_FONT_SIZE)
 				{
 					fontSize ++;
 					tf = new TextFormat(null,fontSize);

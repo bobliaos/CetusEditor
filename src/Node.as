@@ -27,6 +27,8 @@ package
 
 	public class Node extends Sprite
 	{
+		public static var nodeSize:Number = 2;
+		
 		protected namespace svg = "http://www.w3.org/2000/svg";
 		
 		public var sourceXML:XML;
@@ -116,7 +118,9 @@ package
 			color = sourceXML.@nodeTypeId == "3" ? 0xFFFF00 : color;
 			color = sourceXML.@nodeTypeId == "2" ? 0xBBBBBB : color;
 			
-			var radius:Number = 2;
+			color = sourceXML.@bindNodeIds == "" ? 0x000000 : color;
+			
+			var radius:Number = nodeSize;
 			this.ball.graphics.clear();
 			this.ball.graphics.beginFill(0x222222,0.2);
 			this.ball.graphics.drawCircle(0,0,radius + 1);
@@ -174,10 +178,10 @@ package
 				if(sourceXML.@nodeTypeId == "1")
 				{
 					var tmp:DisplayObject = displaySVGPath;
-					while(getQualifiedClassName(tmp.parent) != "com.lorentz.SVG.display::SVG" && tmp.parent != stage)
+					while(tmp.parent && getQualifiedClassName(tmp.parent) != "com.lorentz.SVG.display::SVG" && tmp.parent != stage)
 					{
 						tmp = tmp.parent as DisplayObject;
-						tmp.parent.setChildIndex(tmp,0);
+						if(tmp && tmp.parent) tmp.parent.setChildIndex(tmp,0);
 					}
 				};
 			}

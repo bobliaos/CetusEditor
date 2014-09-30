@@ -112,6 +112,7 @@ package com
 			simpleXML.@textureData = xml.@textureData.toString() != "" ? xml.@textureData : DEFAULT_TEXTURE_DATA;
 			simpleXML.@fill = xml.@fill.toString() != "" ? xml.@fill : DEFAULT_FILL;
 			simpleXML.@deep = xml.@deep.toString() != "" ? xml.@deep : DEFAULT_DEEP;
+//			simpleXML.@deep = "20";
 			simpleXML.@d = xml.@d.toString() != "" ? xml.@d : DEFAULT_D;
 			simpleXML.@nodePosition = xml.@nodePosition.toString() != "" ? xml.@nodePosition : calculateNodePosition(simpleXML.@d);
 //			simpleXML.@nodePosition = calculateNodePosition(simpleXML.@d);
@@ -360,9 +361,9 @@ package com
 			if(svgXML.@far.toString() == "") svgXML.@far = 28000;
 			if(svgXML.@fov.toString() == "") svgXML.@fov = 25;
 			if(svgXML.@minDistance.toString() == "") svgXML.@minDistance = 1200;
-			if(svgXML.@maxDistance.toString() == "") svgXML.@maxDistance = 2500;
-			if(svgXML.@minX.toString() == "") svgXML.@minX = -300;
-			if(svgXML.@maxX.toString() == "") svgXML.@maxX = 300;
+			if(svgXML.@maxDistance.toString() == "") svgXML.@maxDistance = 12500;
+			if(svgXML.@minX.toString() == "") svgXML.@minX = -1200;
+			if(svgXML.@maxX.toString() == "") svgXML.@maxX = 400;
 			if(svgXML.@minY.toString() == "") svgXML.@minY = -150;
 			if(svgXML.@maxY.toString() == "") svgXML.@maxY = 250;
 			if(svgXML.@minFloorPositionZ.toString() == "") svgXML.@minFloorPositionZ = -12400;
